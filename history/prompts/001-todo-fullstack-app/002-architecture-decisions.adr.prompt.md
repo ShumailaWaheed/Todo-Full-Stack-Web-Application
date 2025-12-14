@@ -33,9 +33,9 @@ tests_yaml: |
 ## PROMPT_TEXT
 
 ```
-# COMMAND: Analyze planning artifacts and document architecturally significant decisions as ADRs
+OMMAND: Analyze planning artifacts and document architecturally significant decisions as ADRs
 
-## CONTEXT
+CONTEXT
 
 The user has completed feature planning and needs to:
 

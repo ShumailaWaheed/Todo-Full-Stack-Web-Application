@@ -24,12 +24,12 @@ tests:
 ## Prompt
 
 ```text
-# Phase II – Todo Full-Stack Web Application Constitution
+Phase II – Todo Full-Stack Web Application Constitution
 
 **Scope:** Phase II (Web, Multi-User, Authenticated, Persistent)
 
 ────────────────────────────────────────────
-## SECTION I – CORE PRINCIPLES
+SECTION I – CORE PRINCIPLES
 ────────────────────────────────────────────
 1. **Spec-Driven Development Workflow**
    - Specs are the single source of truth.
@@ -66,7 +66,7 @@ tests:
 Backward compatibility with Phase I is mandatory.
 
 ────────────────────────────────────────────
-## SECTION III – TECHNOLOGY GOVERNANCE
+SECTION III – TECHNOLOGY GOVERNANCE
 ────────────────────────────────────────────
 **Frontend:**
 - Next.js 16+ (App Router)
@@ -91,7 +91,7 @@ Backward compatibility with Phase I is mandatory.
 - Password hashing using bcrypt
 
 ────────────────────────────────────────────
-## SECTION IV – SECURITY REQUIREMENTS
+SECTION IV – SECURITY REQUIREMENTS
 ────────────────────────────────────────────
 1. **User Data Isolation**
    - ALL database queries must filter by user_id.
@@ -110,7 +110,7 @@ Backward compatibility with Phase I is mandatory.
    - Raw SQL requires ADR approval.
 
 ────────────────────────────────────────────
-## SECTION V – API-FIRST PRINCIPLES
+SECTION V – API-FIRST PRINCIPLES
 ────────────────────────────────────────────
 - API contracts defined before implementation
 - Backend implements API contracts first
@@ -119,7 +119,7 @@ Backward compatibility with Phase I is mandatory.
 - Any breaking API change requires an ADR
 
 ────────────────────────────────────────────
-## SECTION VI – API REQUIREMENTS
+SECTION VI – API REQUIREMENTS
 ────────────────────────────────────────────
 **All routes under `/api/`**
 **JWT required on all endpoints**
@@ -134,7 +134,7 @@ Backward compatibility with Phase I is mandatory.
 - PATCH  /api/{user_id}/tasks/{id}/complete
 
 ────────────────────────────────────────────
-## SECTION VII – REPOSITORY STRUCTURE (MONOREPO)
+SECTION VII – REPOSITORY STRUCTURE (MONOREPO)
 ────────────────────────────────────────────
 /
 ├── .specify/memory/constitution.md
@@ -161,7 +161,7 @@ Backward compatibility with Phase I is mandatory.
 └── README.md
 
 ────────────────────────────────────────────
-## SECTION VIII – REQUIRED FEATURES
+SECTION VIII – REQUIRED FEATURES
 ────────────────────────────────────────────
 1. **User Authentication**
    - Signup/signin via Better Auth
@@ -185,7 +185,7 @@ Backward compatibility with Phase I is mandatory.
    - Tailwind CSS enforced
 
 ────────────────────────────────────────────
-## SECTION IX – TESTING REQUIREMENTS
+SECTION IX – TESTING REQUIREMENTS
 ────────────────────────────────────────────
 Mandatory test types:
 - API integration tests
@@ -197,7 +197,7 @@ Mandatory test types:
 **Minimum coverage:** 80% overall
 
 ────────────────────────────────────────────
-## SECTION X – SPEC-KIT & CLAUDE GOVERNANCE
+SECTION X – SPEC-KIT & CLAUDE GOVERNANCE
 ────────────────────────────────────────────
 - Specs live under `/specs`
 - Organized by `features`, `api`, `database`, `ui`
@@ -207,7 +207,7 @@ Mandatory test types:
   - Layer-specific CLAUDE.md
 
 ────────────────────────────────────────────
-## SECTION XI – FORBIDDEN ACTIONS
+SECTION XI – FORBIDDEN ACTIONS
 ────────────────────────────────────────────
 - Writing code without specs
 - Bypassing authentication
@@ -217,7 +217,7 @@ Mandatory test types:
 - Introducing breaking changes without ADR
 
 ────────────────────────────────────────────
-## SECTION XII – SUCCESS CRITERIA
+SECTION XII – SUCCESS CRITERIA
 ────────────────────────────────────────────
 Phase II is COMPLETE only when:
 - All Phase II requirements implemented
