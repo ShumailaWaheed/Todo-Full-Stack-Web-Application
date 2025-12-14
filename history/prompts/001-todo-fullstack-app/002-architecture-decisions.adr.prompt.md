@@ -28,14 +28,14 @@ tests_yaml: |
   - "security pattern validation"
 ---
 
-# Architecture Decision Records for Todo Full-Stack Web Application
+## Architecture Decision Records for Todo Full-Stack Web Application
 
 ## PROMPT_TEXT
 
 ```
-OMMAND: Analyze planning artifacts and document architecturally significant decisions as ADRs
+### COMMAND: Analyze planning artifacts and document architecturally significant decisions as ADRs
 
-CONTEXT
+### CONTEXT
 
 The user has completed feature planning and needs to:
 

@@ -23,7 +23,7 @@ tests_yaml: |
   - "dependency mapping validation"
 ---
 
-# Implementation Tasks for Todo Full-Stack Web Application
+## Implementation Tasks for Todo Full-Stack Web Application
 
 ## PROMPT_TEXT
 

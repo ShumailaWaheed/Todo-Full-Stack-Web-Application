@@ -24,18 +24,18 @@ tests_yaml: |
   - "user scenario validation"
 ---
 
-# Todo Full-Stack Web Application Specification
+## Todo Full-Stack Web Application Specification
 
 ## PROMPT_TEXT
 
 ```
-# Phase II – Todo Full-Stack Web Application Constitution
+## Phase II – Todo Full-Stack Web Application Constitution
 
-## Purpose
+### Purpose
 Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, implement, and evolve a production-ready Todo Full-Stack Web Application that transforms a console app into a secure, multi-user, web-based system with persistent storage.
 
 ────────────────────────────────────────────
-## CORE PRINCIPLES
+### CORE PRINCIPLES
 ────────────────────────────────────────────
 1. **Spec-First Development**
    - No code may be written without an existing, approved specification.
@@ -62,7 +62,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
    - Changes in one layer must be reflected across all relevant layers and specs.
 
 ────────────────────────────────────────────
-## MANDATORY TECHNOLOGY STACK
+### MANDATORY TECHNOLOGY STACK
 ────────────────────────────────────────────
 **Frontend:**
 - Next.js 16+ (App Router)
@@ -88,7 +88,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
 - Folder structure must follow Spec-Kit conventions exactly
 
 ────────────────────────────────────────────
-## REQUIRED FEATURES (PHASE II)
+### REQUIRED FEATURES (PHASE II)
 ────────────────────────────────────────────
 1. **User Authentication**
    - User signup and signin using Better Auth
@@ -117,7 +117,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
    - Usable on desktop and mobile devices
 
 ────────────────────────────────────────────
-## API REQUIREMENTS
+### API REQUIREMENTS
 ────────────────────────────────────────────
 **Base Rules:**
 - All routes must be under `/api/`
@@ -139,7 +139,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
 - Missing or invalid token results in 401 Unauthorized
 
 ────────────────────────────────────────────
-## AUTHENTICATION & JWT CONSTITUTION
+### AUTHENTICATION & JWT CONSTITUTION
 ────────────────────────────────────────────
 - Better Auth runs ONLY on Next.js frontend
 - FastAPI backend NEVER trusts frontend blindly
@@ -153,7 +153,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
   - Handle expired tokens gracefully
 
 ────────────────────────────────────────────
-## DATABASE CONSTITUTION
+### DATABASE CONSTITUTION
 ────────────────────────────────────────────
 **Tables:**
 - users (managed by Better Auth)
@@ -171,7 +171,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
 - No raw SQL unless explicitly required and justified
 
 ────────────────────────────────────────────
-## SPEC-KIT RULES (NON-NEGOTIABLE)
+### SPEC-KIT RULES (NON-NEGOTIABLE)
 ────────────────────────────────────────────
 - Specs must live under `/specs`
 - Spec categories:
@@ -183,7 +183,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
 - Claude Code must always reference specs using: `@specs/path/to/file.md`
 
 ────────────────────────────────────────────
-## CLAUDE.md GOVERNANCE
+### CLAUDE.md GOVERNANCE
 ────────────────────────────────────────────
 - Root CLAUDE.md defines global rules
 - frontend/CLAUDE.md defines frontend-only rules
@@ -196,7 +196,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
   - Layer-specific CLAUDE.md
 
 ────────────────────────────────────────────
-## QUALITY STANDARDS
+### QUALITY STANDARDS
 ────────────────────────────────────────────
 **Code Quality:**
 - No unused code
@@ -215,7 +215,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
 - User isolation verified for all CRUD operations
 
 ────────────────────────────────────────────
-## FORBIDDEN ACTIONS
+### FORBIDDEN ACTIONS
 ────────────────────────────────────────────
 - Writing code without specs
 - Bypassing authentication
@@ -225,7 +225,7 @@ Define strict constitutional rules for Claude Code + Spec-Kit Plus to design, im
 - Deviating from defined stack
 
 ────────────────────────────────────────────
-## SUCCESS CRITERIA
+### SUCCESS CRITERIA
 ────────────────────────────────────────────
 The project is considered COMPLETE only when:
 - All Phase II requirements are implemented
@@ -236,7 +236,7 @@ The project is considered COMPLETE only when:
 - No requirement from Phase II is missing
 
 ────────────────────────────────────────────
-## FINAL RULE
+### FINAL RULE
 ────────────────────────────────────────────
 - If a requirement is not written in specs, it does not exist.
 - If it exists in specs, it MUST be implemented exactly.

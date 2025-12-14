@@ -29,7 +29,7 @@ tests_yaml: |
   - "project structure validation"
 ---
 
-# Full-Stack Todo Web Application Planning
+## Full-Stack Todo Web Application Planning
 
 ## PROMPT_TEXT
 
@@ -39,7 +39,7 @@ Phase II – Todo Full-Stack Web Application Plan
 **Scope:** Phase II (Web, Multi-User, Authenticated, Persistent)
 
 ────────────────────────────────────────────
-PHASE 0 – RESEARCH & TECHNOLOGY DECISIONS
+### PHASE 0 – RESEARCH & TECHNOLOGY DECISIONS
 ────────────────────────────────────────────
 **Frontend:** Next.js 16+ App Router, TypeScript strict mode, Tailwind CSS, Server Components by default, Client Components for interactivity.
 
@@ -82,7 +82,7 @@ PHASE 0 – RESEARCH & TECHNOLOGY DECISIONS
 └── README.md
 
 ────────────────────────────────────────────
-PERFORMANCE TARGETS
+### PERFORMANCE TARGETS
 ────────────────────────────────────────────
 **Scale: Moderate**
 - Up to 10,000 registered users
@@ -92,7 +92,7 @@ PERFORMANCE TARGETS
 - Hot reload <3s
 
 ────────────────────────────────────────────
-TESTING & VALIDATION
+### TESTING & VALIDATION
 ────────────────────────────────────────────
 - Unit tests for all models and API endpoints
 - Integration tests for API contracts
@@ -103,7 +103,7 @@ TESTING & VALIDATION
 - Minimum coverage: 80%
 
 ────────────────────────────────────────────
-ADR DECISIONS
+### ADR DECISIONS
 ────────────────────────────────────────────
 1. Phase II Tech Stack: Next.js 16+, FastAPI, PostgreSQL, Tailwind CSS, JWT + Better Auth
 2. Monorepo vs Separate Repositories → Monorepo
@@ -112,7 +112,7 @@ ADR DECISIONS
 5. Database Strategy → PostgreSQL with dual deployment (Docker dev + Neon prod)
 
 ────────────────────────────────────────────
-SUCCESS CRITERIA
+### SUCCESS CRITERIA
 ────────────────────────────────────────────
 Phase II complete when:
 - All authentication and task CRUD features implemented
