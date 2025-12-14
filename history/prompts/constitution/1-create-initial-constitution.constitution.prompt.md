@@ -28,9 +28,10 @@ Phase II – Todo Full-Stack Web Application Constitution
 
 **Scope:** Phase II (Web, Multi-User, Authenticated, Persistent)
 
-────────────────────────────────────────────
+---
+
 SECTION I – CORE PRINCIPLES
-────────────────────────────────────────────
+
 1. **Spec-Driven Development Workflow**
    - Specs are the single source of truth.
    - No code may be written without an approved spec.
@@ -52,9 +53,10 @@ SECTION I – CORE PRINCIPLES
    - Phase II extends Phase I.
    - No Phase I behavior may be broken without explicit ADR approval.
 
-────────────────────────────────────────────
+---
+
 ## SECTION II – DOMAIN MODEL (PHASE II EXTENSIONS)
-────────────────────────────────────────────
+
 **Existing Fields (from Phase I):**
 - id, title, description, completed
 
@@ -65,9 +67,10 @@ SECTION I – CORE PRINCIPLES
 
 Backward compatibility with Phase I is mandatory.
 
-────────────────────────────────────────────
+---
+
 SECTION III – TECHNOLOGY GOVERNANCE
-────────────────────────────────────────────
+
 **Frontend:**
 - Next.js 16+ (App Router)
 - Server Components by default; Client Components only for interactivity
@@ -90,9 +93,10 @@ SECTION III – TECHNOLOGY GOVERNANCE
 - Token expiration: 7 days
 - Password hashing using bcrypt
 
-────────────────────────────────────────────
+---
+
 SECTION IV – SECURITY REQUIREMENTS
-────────────────────────────────────────────
+
 1. **User Data Isolation**
    - ALL database queries must filter by user_id.
    - No shared/global task access.
@@ -109,18 +113,20 @@ SECTION IV – SECURITY REQUIREMENTS
    - SQLModel parameterized queries only.
    - Raw SQL requires ADR approval.
 
-────────────────────────────────────────────
+---
+
 SECTION V – API-FIRST PRINCIPLES
-────────────────────────────────────────────
+
 - API contracts defined before implementation
 - Backend implements API contracts first
 - Frontend consumes APIs via type-safe client
 - OpenAPI/Swagger documentation auto-generated
 - Any breaking API change requires an ADR
 
-────────────────────────────────────────────
+---
+
 SECTION VI – API REQUIREMENTS
-────────────────────────────────────────────
+
 **All routes under `/api/`**
 **JWT required on all endpoints**
 **Authorization header:** `Authorization: Bearer <token>`
@@ -133,9 +139,10 @@ SECTION VI – API REQUIREMENTS
 - DELETE /api/{user_id}/tasks/{id}
 - PATCH  /api/{user_id}/tasks/{id}/complete
 
-────────────────────────────────────────────
+---
+
 SECTION VII – REPOSITORY STRUCTURE (MONOREPO)
-────────────────────────────────────────────
+
 /
 ├── .specify/memory/constitution.md
 ├── .spec-kit/config.yaml
@@ -160,9 +167,10 @@ SECTION VII – REPOSITORY STRUCTURE (MONOREPO)
 ├── CLAUDE.md
 └── README.md
 
-────────────────────────────────────────────
+---
+
 SECTION VIII – REQUIRED FEATURES
-────────────────────────────────────────────
+
 1. **User Authentication**
    - Signup/signin via Better Auth
    - JWT issuance & expiration
@@ -184,9 +192,10 @@ SECTION VIII – REQUIRED FEATURES
    - Desktop & mobile compatible
    - Tailwind CSS enforced
 
-────────────────────────────────────────────
+---
+
 SECTION IX – TESTING REQUIREMENTS
-────────────────────────────────────────────
+
 Mandatory test types:
 - API integration tests
 - React component tests
@@ -196,9 +205,10 @@ Mandatory test types:
 
 **Minimum coverage:** 80% overall
 
-────────────────────────────────────────────
+---
+
 SECTION X – SPEC-KIT & CLAUDE GOVERNANCE
-────────────────────────────────────────────
+
 - Specs live under `/specs`
 - Organized by `features`, `api`, `database`, `ui`
 - Claude Code must read:
@@ -206,9 +216,10 @@ SECTION X – SPEC-KIT & CLAUDE GOVERNANCE
   - Relevant spec files
   - Layer-specific CLAUDE.md
 
-────────────────────────────────────────────
+---
+
 SECTION XI – FORBIDDEN ACTIONS
-────────────────────────────────────────────
+
 - Writing code without specs
 - Bypassing authentication
 - Cross-user data access
@@ -216,9 +227,10 @@ SECTION XI – FORBIDDEN ACTIONS
 - Deviating from approved stack
 - Introducing breaking changes without ADR
 
-────────────────────────────────────────────
+---
+
 SECTION XII – SUCCESS CRITERIA
-────────────────────────────────────────────
+
 Phase II is COMPLETE only when:
 - All Phase II requirements implemented
 - JWT auth enforced everywhere

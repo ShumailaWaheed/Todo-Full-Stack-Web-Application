@@ -81,9 +81,10 @@ Phase II – Todo Full-Stack Web Application Plan
 ├── CLAUDE.md
 └── README.md
 
-────────────────────────────────────────────
+---
+
 ### PERFORMANCE TARGETS
-────────────────────────────────────────────
+
 **Scale: Moderate**
 - Up to 10,000 registered users
 - 100 concurrent users
@@ -91,9 +92,10 @@ Phase II – Todo Full-Stack Web Application Plan
 - API response <200ms (p95)
 - Hot reload <3s
 
-────────────────────────────────────────────
+---
+
 ### TESTING & VALIDATION
-────────────────────────────────────────────
+
 - Unit tests for all models and API endpoints
 - Integration tests for API contracts
 - React component tests
@@ -102,18 +104,20 @@ Phase II – Todo Full-Stack Web Application Plan
 - User isolation tests
 - Minimum coverage: 80%
 
-────────────────────────────────────────────
+---
+
 ### ADR DECISIONS
-────────────────────────────────────────────
+
 1. Phase II Tech Stack: Next.js 16+, FastAPI, PostgreSQL, Tailwind CSS, JWT + Better Auth
 2. Monorepo vs Separate Repositories → Monorepo
 3. Local Docker Dev vs Cloud Only → Docker Compose with Neon PostgreSQL
 4. Authentication Strategy → JWT short-lived + refresh tokens
 5. Database Strategy → PostgreSQL with dual deployment (Docker dev + Neon prod)
 
-────────────────────────────────────────────
+---
+
 ### SUCCESS CRITERIA
-────────────────────────────────────────────
+
 Phase II complete when:
 - All authentication and task CRUD features implemented
 - JWT auth with refresh tokens functional
