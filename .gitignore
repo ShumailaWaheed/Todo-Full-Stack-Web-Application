@@ -1,41 +1,187 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.env*
+.ENV
+*.env*
+*.swp
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Build outputs
+dist/
+build/
+.next/
+out/
+target/
+bin/
+obj/
+debug/
+release/
+*.exe
+*.dll
+*.so
+*.a
+*.o
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
+# Logs
+*.log
+logs/
+log/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*:*
+*.DS_Store
+
+# Environment specific
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Python specific
+*.pyc
+__pycache__/
+*.so
+.Python
+env/
+venv/
+ENV
+.venv
+.ENV
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/refs/replace/
+.python-version
+
+# Node.js specific
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+.pnp
+.pnp.js
+.next
+out/
+.nuxt
+.cache/
+.output/
+dist/
+build/
+coverage/
+.nyc_output/
+*.lcov
+coverage/
+.nyc_output/
+*.log
+*.log.*
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
+# TypeScript/JavaScript
 *.tsbuildinfo
-next-env.d.ts
+*.jsbuildinfo
+*.swc
+*.swcrc
+*.swcrc.js
+*.swcrc.json
+*.swcrc.json5
+*.swcrc.yaml
+*.swcrc.yml
+*.swcrc.toml
+
+# Docker
+.dockerignore
+.docker
+
+# Next.js
+.next/
+out/
+dist/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.next
+out
+.nft.json
+README.md
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Backend specific
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV
+.venv
+.ENV
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/refs/replace/
+.python-version
+*.sqlite3
+*.db
+instance/
+.webassets-cache
+celerybeat-schedule
+celerybeat.pid
+
+# Alembic
+alembic_version/
+alembic/versions/*.py
+alembic.log
+
+# FastAPI
+*.db
+*.sqlite
+instance/
+.webassets-cache
+celerybeat-schedule
+celerybeat.pid
