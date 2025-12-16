@@ -28,7 +28,6 @@ tests_yaml: |
 
 ## PROMPT_TEXT
 
-```
 ## Phase II – Todo Full-Stack Web Application Constitution
 
 ### Purpose
@@ -242,7 +241,6 @@ The project is considered COMPLETE only when:
 - If it exists in specs, it MUST be implemented exactly.
 
 **This constitution is binding for all development using Claude Code + Spec-Kit Plus for this project.**
-```
 
 ## RESPONSE_TEXT
 

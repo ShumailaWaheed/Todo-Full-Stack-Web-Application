@@ -15,7 +15,7 @@ class TokenData(BaseModel):
 class LoginRequest(BaseModel):
     """Schema for login request."""
     email: str
-    password: str
+    password: str = ""  # Default to empty string for demo purposes
 
 class RegisterRequest(BaseModel):
     """Schema for registration request."""

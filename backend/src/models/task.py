@@ -12,6 +12,8 @@ class Task(SQLModel, table=True):
     description: Optional[str] = Field(max_length=2000, default=None)
     completed: bool = Field(default=False)
     user_id: str = Field(nullable=False)
+    due_date: Optional[datetime] = Field(default=None)
+    priority: Optional[str] = Field(max_length=20, default="medium")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -23,6 +25,8 @@ class Task(SQLModel, table=True):
                 "description": "Finish the todo application project",
                 "completed": False,
                 "user_id": "user_123",
+                "due_date": "2025-12-31T23:59:59Z",
+                "priority": "high",
                 "created_at": "2025-12-14T10:00:00Z",
                 "updated_at": "2025-12-14T10:00:00Z"
             }

@@ -3,6 +3,8 @@
 
 import React from 'react';
 import { Task } from '../../lib/types';
+import { useTheme } from '../../lib/theme/context';
+import { FaCheck, FaEdit, FaTrash, FaCalendarAlt, FaFlag } from 'react-icons/fa';
 
 interface TaskCardProps {
   task: Task;
@@ -11,55 +13,124 @@ interface TaskCardProps {
   onDelete: (task: Task) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
-  task,
-  onToggleComplete,
-  onEdit,
-  onDelete
-}) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleComplete, onEdit, onDelete }) => {
+  const { theme } = useTheme();
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'medium':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'low':
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={task.completed}
-              onChange={() => onToggleComplete(task)}
-              className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
-            />
-            <h3 className={`ml-3 text-lg leading-6 font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+    <div className={`rounded-xl p-6 mb-4 border transition-all duration-300 ${
+      theme.mode === 'light'
+        ? 'bg-white border-gray-200 text-gray-900'
+        : 'bg-gray-800 border-gray-600 hover:border-gray-500 hover:shadow-lg hover:shadow-purple-500/5 transition-shadow'
+    }`}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start">
+          <input
+            type="checkbox"
+            checked={task.completed}
+            onChange={() => onToggleComplete(task)}
+            className={`mt-1 h-5 w-5 rounded ${
+              theme.mode === 'light'
+                ? 'border-gray-300 bg-white text-gray-900 focus:ring-gray-900'
+                : 'border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500'
+            } focus:ring-2`}
+          />
+          <div className="ml-4 flex-1">
+            <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : (theme.mode === 'light' ? 'text-gray-900' : 'text-white')}`}>
               {task.title}
             </h3>
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => onEdit(task)}
-              className="inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => onDelete(task)}
-              className="inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              Delete
-            </button>
+            {task.description && (
+              <p className={`mt-1 ${theme.mode === 'light' ? 'text-gray-600' : 'text-gray-400'} ${task.completed ? 'line-through' : ''}`}>
+                {task.description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-2 mt-3">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority || 'low')}`}>
+                <FaFlag className="mr-1" />
+                {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Medium'}
+              </span>
+
+              {task.due_date && (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  theme.mode === 'light'
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                    : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                }`}>
+                  <FaCalendarAlt className="mr-1" />
+                  {formatDate(task.due_date)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        {task.description && (
-          <p className={`mt-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-            {task.description}
-          </p>
-        )}
-        <div className="mt-4 flex flex-wrap justify-between text-sm text-gray-500">
-          <span>Created: {new Date(task.created_at).toLocaleDateString()}</span>
-          {task.updated_at !== task.created_at && (
-            <span>Updated: {new Date(task.updated_at).toLocaleDateString()}</span>
+
+        <div className="flex space-x-2">
+          <button
+            onClick={() => onEdit(task)}
+            className={`p-2 ${
+              theme.mode === 'light'
+                ? 'text-gray-600 hover:text-purple-600 hover:bg-gray-100'
+                : 'text-gray-400 hover:text-purple-400 hover:bg-gray-700 rounded-lg transition-colors duration-200'
+            } rounded-lg transition-colors duration-200`}
+            aria-label="Edit task"
+          >
+            <FaEdit />
+          </button>
+          <button
+            onClick={() => onDelete(task)}
+            className={`p-2 ${
+              theme.mode === 'light'
+                ? 'text-gray-600 hover:text-red-600 hover:bg-gray-100'
+                : 'text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors duration-200'
+            } rounded-lg transition-colors duration-200`}
+            aria-label="Delete task"
+          >
+            <FaTrash />
+          </button>
+          {!task.completed && (
+            <button
+              onClick={() => onToggleComplete(task)}
+              className={`p-2 ${
+                theme.mode === 'light'
+                  ? 'text-gray-600 hover:text-green-600 hover:bg-gray-100'
+                  : 'text-gray-400 hover:text-green-400 hover:bg-gray-700 rounded-lg transition-colors duration-200'
+              } rounded-lg transition-colors duration-200`}
+              aria-label="Mark as complete"
+            >
+              <FaCheck />
+            </button>
           )}
         </div>
+      </div>
+
+      <div className={`mt-4 flex justify-between items-center text-xs ${
+        theme.mode === 'light' ? 'text-gray-500' : 'text-gray-500'
+      }`}>
+        <span>Created: {formatDate(task.created_at)}</span>
+        {task.updated_at !== task.created_at && (
+          <span>Updated: {formatDate(task.updated_at)}</span>
+        )}
       </div>
     </div>
   );

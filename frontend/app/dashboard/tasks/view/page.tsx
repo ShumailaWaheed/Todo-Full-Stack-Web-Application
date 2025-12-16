@@ -1,8 +1,8 @@
-// frontend/app/dashboard/tasks/[id]/page.tsx
+// frontend/app/dashboard/tasks/view/page.tsx
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../lib/auth/context';
 import { apiService } from '../../../../lib/api';
 import { Task } from '../../../../lib/types';
@@ -10,8 +10,8 @@ import TaskDetail from '../../../../components/tasks/task-detail';
 import TaskEditForm from '../../../../components/tasks/task-edit-form';
 
 const TaskDetailPageContent: React.FC = () => {
-  const params = useParams();
-  const id = params.id as string;
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const router = useRouter();
   const { user } = useAuth();
   const [task, setTask] = useState<Task | null>(null);
@@ -37,12 +37,7 @@ const TaskDetailPageContent: React.FC = () => {
       setTask(fetchedTask);
     } catch (err) {
       console.error('Failed to load task:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to load task. It may not exist or you may not have permission to view it.');
-      }
+      setError('Failed to load task. It may not exist or you may not have permission to view it.');
     } finally {
       setLoading(false);
     }
@@ -57,12 +52,7 @@ const TaskDetailPageContent: React.FC = () => {
       setEditing(false);
     } catch (err) {
       console.error('Failed to update task:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to update task. Please try again.');
-      }
+      setError('Failed to update task. Please try again.');
     }
   };
 
@@ -76,12 +66,7 @@ const TaskDetailPageContent: React.FC = () => {
       setTask(updatedTask);
     } catch (err) {
       console.error('Failed to toggle task completion:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to update task status. Please try again.');
-      }
+      setError('Failed to update task status. Please try again.');
     }
   };
 
@@ -93,12 +78,7 @@ const TaskDetailPageContent: React.FC = () => {
       router.push('/dashboard/tasks');
     } catch (err) {
       console.error('Failed to delete task:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to delete task. Please try again.');
-      }
+      setError('Failed to delete task. Please try again.');
     }
   };
 
@@ -118,8 +98,7 @@ const TaskDetailPageContent: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="text-lg text-gray-400 mt-4">Loading task...</p>
+          <p className="text-lg">Loading task...</p>
         </div>
       </div>
     );
@@ -128,12 +107,12 @@ const TaskDetailPageContent: React.FC = () => {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="p-4 mb-4 bg-red-500/20 rounded-xl border border-red-500/30">
-          <div className="text-sm text-red-300">{error}</div>
+        <div className="rounded-md bg-red-50 p-4 mb-4">
+          <div className="text-sm text-red-700">{error}</div>
         </div>
         <button
           onClick={handleBack}
-          className="inline-flex items-center px-4 py-2.5 bg-gray-800 rounded-lg text-white font-medium hover:bg-gray-700 transition-all duration-300 border border-gray-600"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
         >
           Back to Tasks
         </button>
@@ -144,11 +123,11 @@ const TaskDetailPageContent: React.FC = () => {
   if (!task) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center p-8 bg-gray-800/50 rounded-xl border border-gray-700">
-          <p className="text-lg text-gray-400">Task not found</p>
+        <div className="text-center">
+          <p className="text-lg">Task not found</p>
           <button
             onClick={handleBack}
-            className="mt-4 inline-flex items-center px-4 py-2.5 bg-gray-800 rounded-lg text-white font-medium hover:bg-gray-700 transition-all duration-300 border border-gray-600"
+            className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
             Back to Tasks
           </button>
@@ -185,5 +164,6 @@ const TaskDetailPage: React.FC = () => {
     </Suspense>
   );
 };
+
 
 export default TaskDetailPage;

@@ -4,10 +4,14 @@ import os
 from contextlib import contextmanager
 
 # Get database URL from environment, with a default for development
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://todo_user:todo_password@localhost:5432/todo_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./todo.db")
 
 # Create the engine
-engine = create_engine(DATABASE_URL, echo=True)
+# For SQLite, we need to add connect_args={"check_same_thread": False} for async operations
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL, echo=True)
 
 @contextmanager
 def get_session() -> Generator:

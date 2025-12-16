@@ -1,7 +1,7 @@
 // frontend/lib/api/index.ts
 import { Token, LoginRequest, RefreshTokenRequest, Task, TaskCreate, TaskUpdate, TaskToggleComplete, TaskListResponse } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 class ApiService {
   private accessToken: string | null = null;
@@ -87,6 +87,10 @@ class ApiService {
       return response.json() as Promise<T>;
     } catch (error) {
       console.error('API request error:', error);
+      // Check if it's a network error (Failed to fetch)
+      if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+        throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
+      }
       throw error;
     }
   }
@@ -98,7 +102,7 @@ class ApiService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +128,7 @@ class ApiService {
 
   // Authentication methods
   async login(loginData: LoginRequest): Promise<Token> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -133,7 +137,7 @@ class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error('Login failed');
+      throw new Error(`Login failed: ${response.status} ${response.statusText}`);
     }
 
     const tokens: Token = await response.json();
@@ -147,7 +151,7 @@ class ApiService {
 
   // Task methods
   async getTasks(userId: string, completed?: boolean, limit: number = 50, offset: number = 0): Promise<TaskListResponse> {
-    let url = `/api/users/${userId}/tasks?limit=${limit}&offset=${offset}`;
+    let url = `/api/${userId}/?limit=${limit}&offset=${offset}`;
     if (completed !== undefined) {
       url += `&completed=${completed}`;
     }
@@ -155,29 +159,29 @@ class ApiService {
   }
 
   async getTask(userId: string, taskId: string): Promise<Task> {
-    return this.request<Task>(`/api/users/${userId}/tasks/${taskId}`, { method: 'GET' });
+    return this.request<Task>(`/api/${userId}/${taskId}`, { method: 'GET' });
   }
 
   async createTask(userId: string, taskData: TaskCreate): Promise<Task> {
-    return this.request<Task>(`/api/users/${userId}/tasks`, {
+    return this.request<Task>(`/api/${userId}/`, {
       method: 'POST',
       body: JSON.stringify(taskData),
     });
   }
 
   async updateTask(userId: string, taskId: string, taskData: TaskUpdate): Promise<Task> {
-    return this.request<Task>(`/api/users/${userId}/tasks/${taskId}`, {
+    return this.request<Task>(`/api/${userId}/${taskId}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
     });
   }
 
   async deleteTask(userId: string, taskId: string): Promise<void> {
-    await this.request<void>(`/api/users/${userId}/tasks/${taskId}`, { method: 'DELETE' });
+    await this.request<void>(`/api/${userId}/${taskId}`, { method: 'DELETE' });
   }
 
   async toggleTaskCompletion(userId: string, taskId: string, completionData: TaskToggleComplete): Promise<Task> {
-    return this.request<Task>(`/api/users/${userId}/tasks/${taskId}/complete`, {
+    return this.request<Task>(`/api/${userId}/${taskId}/complete`, {
       method: 'PATCH',
       body: JSON.stringify(completionData),
     });

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '../lib/auth/context';
+import { ThemeProvider } from '../lib/theme/context';
+import ClientLayout from '../components/layout/client-layout';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Todo App',
-  description: 'A secure todo application with user authentication',
+  title: 'TasklyPro',
+  description: 'A futuristic task management application with advanced analytics',
 };
 
 export default function RootLayout({
@@ -29,7 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
+          <ThemeProvider>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

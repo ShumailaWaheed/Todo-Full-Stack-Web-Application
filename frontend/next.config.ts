@@ -1,17 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Remove output: 'export' for development server
   images: {
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'http',
-        hostname: '0.0.0.0',
-      },
-    ],
+    unoptimized: true,
   },
 };
 

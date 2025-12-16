@@ -32,7 +32,6 @@ tests_yaml: |
 
 ## PROMPT_TEXT
 
-```
 ### COMMAND: Analyze planning artifacts and document architecturally significant decisions as ADRs
 
 ### CONTEXT
@@ -51,9 +50,6 @@ Architecture Decision Records capture decisions that:
 - Will likely be questioned or revisited later
 
 **User's additional input:**
-
-$ARGUMENTS
-```
 
 ## RESPONSE_TEXT
 

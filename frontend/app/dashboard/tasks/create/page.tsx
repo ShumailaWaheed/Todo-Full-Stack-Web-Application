@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import TaskForm from '../../../../components/tasks/task-form';
 import { apiService } from '../../../../lib/api';
 import { useAuth } from '../../../../lib/auth/context';
-import { TaskCreate } from '../../../../lib/types';
+import { TaskCreate, TaskUpdate } from '../../../../lib/types';
 
 const CreateTaskPage: React.FC = () => {
   const router = useRouter();
@@ -17,17 +17,20 @@ const CreateTaskPage: React.FC = () => {
 
     try {
       await apiService.createTask(user.id, taskData);
-      // Redirect back to tasks list after successful creation
-      router.push('/dashboard/tasks');
-      router.refresh();
+      // Redirect back to dashboard after successful creation
+      // The dashboard will automatically refresh data when page becomes visible
+      router.push('/dashboard');
     } catch (err) {
       console.error('Failed to create task:', err);
-      // Error handling would be done in the TaskForm component
+      // Show user-friendly error message if it's a network error
+      if (err instanceof Error && err.message.includes('Network error')) {
+        alert('Unable to create task. Please check your network connection and try again.');
+      }
     }
   };
 
   const handleCancel = () => {
-    router.push('/dashboard/tasks');
+    router.push('/dashboard');
   };
 
   if (!user) {
@@ -42,17 +45,17 @@ const CreateTaskPage: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div className="bg-gray-800 shadow-lg border border-gray-700 px-6 py-8 sm:rounded-xl sm:p-8">
         <div className="md:grid md:grid-cols-3 md:gap-6">
           <div className="md:col-span-1">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Create Task</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="text-lg font-bold text-white">Create Task</h3>
+            <p className="mt-1 text-sm text-gray-400">
               Fill out the form to create a new task.
             </p>
           </div>
           <div className="mt-5 md:col-span-2 md:mt-0">
             <TaskForm
-              onSubmit={handleCreateTask}
+              onSubmit={handleCreateTask as (taskData: TaskCreate | TaskUpdate) => Promise<void>}
               onCancel={handleCancel}
             />
           </div>

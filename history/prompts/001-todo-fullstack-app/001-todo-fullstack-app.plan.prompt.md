@@ -33,7 +33,6 @@ tests_yaml: |
 
 ## PROMPT_TEXT
 
-```
 Phase II – Todo Full-Stack Web Application Plan
 
 **Scope:** Phase II (Web, Multi-User, Authenticated, Persistent)
@@ -126,7 +125,6 @@ Phase II complete when:
 - Performance targets achieved
 - All tests passing
 - Spec, code, and behavior fully aligned
-```
 
 ## RESPONSE_TEXT
 

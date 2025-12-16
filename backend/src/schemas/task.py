@@ -7,17 +7,23 @@ class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
     completed: bool = False
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = "medium"
 
 class TaskCreate(TaskBase):
     """Schema for creating a new task."""
     title: str
     description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = "medium"
 
 class TaskUpdate(BaseModel):
     """Schema for updating an existing task."""
     title: Optional[str] = None
     description: Optional[str] = None
     completed: Optional[bool] = None
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = None
 
 class TaskToggleComplete(BaseModel):
     """Schema for toggling task completion status."""

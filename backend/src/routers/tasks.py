@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from typing import List
 from src.database.session import get_session_dep
 from src.models.task import Task as TaskModel
@@ -35,10 +35,10 @@ def list_tasks(
         query = query.where(TaskModel.completed == completed)
 
     # Get total count
-    total_query = select(TaskModel).where(TaskModel.user_id == user_id)
+    count_query = select(func.count(TaskModel.id)).where(TaskModel.user_id == user_id)
     if completed is not None:
-        total_query = total_query.where(TaskModel.completed == completed)
-    total_count = session.exec(total_query).count()  # Use count() instead of all()
+        count_query = count_query.where(TaskModel.completed == completed)
+    total_count = session.exec(count_query).one()
 
     # Apply pagination
     query = query.offset(offset).limit(limit).order_by(TaskModel.created_at.desc())
@@ -87,6 +87,8 @@ def create_task(
         title=task_data.title,
         description=task_data.description,
         completed=task_data.completed or False,
+        due_date=task_data.due_date,
+        priority=task_data.priority or "medium",
         user_id=user_id
     )
 
@@ -202,6 +204,12 @@ def update_task(
 
     if task_data.completed is not None:
         task.completed = task_data.completed
+
+    if task_data.due_date is not None:
+        task.due_date = task_data.due_date
+
+    if task_data.priority is not None:
+        task.priority = task_data.priority
 
     session.add(task)
     session.commit()
