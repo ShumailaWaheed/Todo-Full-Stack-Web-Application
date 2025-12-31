@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select, func
 from typing import List
+from datetime import datetime, timedelta
 from src.database.session import get_session_dep
 from src.models.task import Task as TaskModel
-from src.schemas.task import TaskCreate, TaskUpdate, Task as TaskSchema, TaskToggleComplete, TaskListResponse
+from src.schemas.task import (
+    TaskCreate, TaskUpdate, Task as TaskSchema, TaskToggleComplete, TaskListResponse,
+    TaskCompletionTrendsResponse, TaskCompletionTrend,
+    WeeklyTaskActivityResponse, WeeklyTaskActivity,
+    TaskAnalyticsSummary
+)
 from src.middleware.auth import get_current_user, verify_user_owns_resource
 from src.models.user import User
 import os
@@ -313,3 +319,189 @@ def toggle_task_completion(
     session.refresh(task)
 
     return task
+
+
+def get_start_of_week(date: datetime) -> datetime:
+    """Get the start of the week (Monday) for a given date."""
+    days_since_monday = date.weekday()
+    return (date - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+@router.get("/analytics/completion-trends", response_model=TaskCompletionTrendsResponse)
+def get_task_completion_trends(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session_dep),
+    weeks: int = Query(8, ge=1, le=52, description="Number of weeks to include")
+):
+    """Get task completion trends for the past N weeks."""
+    # Verify that the user_id in the URL matches the authenticated user
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
+    now = datetime.utcnow()
+    trends = []
+
+    for i in range(weeks - 1, -1, -1):
+        week_start = get_start_of_week(now - timedelta(weeks=i))
+        week_end = week_start + timedelta(days=7)
+
+        # Count completed tasks in this week (based on updated_at when completed)
+        query = select(func.count(TaskModel.id)).where(
+            TaskModel.user_id == user_id,
+            TaskModel.completed == True,
+            TaskModel.updated_at >= week_start,
+            TaskModel.updated_at < week_end
+        )
+        completed_count = session.exec(query).one()
+
+        trends.append(TaskCompletionTrend(
+            week=week_start.strftime("%Y-%m-%d"),
+            completed=completed_count
+        ))
+
+    return TaskCompletionTrendsResponse(trends=trends)
+
+
+@router.get("/analytics/weekly-activity", response_model=WeeklyTaskActivityResponse)
+def get_weekly_task_activity(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session_dep),
+    weeks: int = Query(8, ge=1, le=52, description="Number of weeks to include")
+):
+    """Get weekly task activity (created vs completed) for the past N weeks."""
+    # Verify that the user_id in the URL matches the authenticated user
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
+    now = datetime.utcnow()
+    activity = []
+
+    for i in range(weeks - 1, -1, -1):
+        week_start = get_start_of_week(now - timedelta(weeks=i))
+        week_end = week_start + timedelta(days=7)
+
+        # Count tasks created in this week
+        created_query = select(func.count(TaskModel.id)).where(
+            TaskModel.user_id == user_id,
+            TaskModel.created_at >= week_start,
+            TaskModel.created_at < week_end
+        )
+        created_count = session.exec(created_query).one()
+
+        # Count tasks completed in this week
+        completed_query = select(func.count(TaskModel.id)).where(
+            TaskModel.user_id == user_id,
+            TaskModel.completed == True,
+            TaskModel.updated_at >= week_start,
+            TaskModel.updated_at < week_end
+        )
+        completed_count = session.exec(completed_query).one()
+
+        activity.append(WeeklyTaskActivity(
+            week=week_start.strftime("%Y-%m-%d"),
+            created=created_count,
+            completed=completed_count
+        ))
+
+    return WeeklyTaskActivityResponse(activity=activity)
+
+
+@router.get("/analytics/summary", response_model=TaskAnalyticsSummary)
+def get_task_analytics_summary(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session_dep)
+):
+    """Get a summary of task analytics."""
+    # Verify that the user_id in the URL matches the authenticated user
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
+    now = datetime.utcnow()
+    week_start = get_start_of_week(now)
+
+    # Total tasks
+    total_query = select(func.count(TaskModel.id)).where(TaskModel.user_id == user_id)
+    total_tasks = session.exec(total_query).one()
+
+    # Completed tasks
+    completed_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.completed == True
+    )
+    completed_tasks = session.exec(completed_query).one()
+
+    # Pending tasks
+    pending_tasks = total_tasks - completed_tasks
+
+    # Overdue tasks
+    overdue_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.completed == False,
+        TaskModel.due_date < now
+    )
+    overdue_tasks = session.exec(overdue_query).one()
+
+    # Completion rate
+    completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+
+    # Tasks completed this week
+    completed_this_week_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.completed == True,
+        TaskModel.updated_at >= week_start
+    )
+    tasks_completed_this_week = session.exec(completed_this_week_query).one()
+
+    # Tasks created this week
+    created_this_week_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.created_at >= week_start
+    )
+    tasks_created_this_week = session.exec(created_this_week_query).one()
+
+    # Priority breakdown for pending tasks
+    high_priority_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.completed == False,
+        TaskModel.priority == "high"
+    )
+    high_priority_pending = session.exec(high_priority_query).one()
+
+    medium_priority_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.completed == False,
+        TaskModel.priority == "medium"
+    )
+    medium_priority_pending = session.exec(medium_priority_query).one()
+
+    low_priority_query = select(func.count(TaskModel.id)).where(
+        TaskModel.user_id == user_id,
+        TaskModel.completed == False,
+        TaskModel.priority == "low"
+    )
+    low_priority_pending = session.exec(low_priority_query).one()
+
+    return TaskAnalyticsSummary(
+        total_tasks=total_tasks,
+        completed_tasks=completed_tasks,
+        pending_tasks=pending_tasks,
+        overdue_tasks=overdue_tasks,
+        completion_rate=round(completion_rate, 1),
+        tasks_completed_this_week=tasks_completed_this_week,
+        tasks_created_this_week=tasks_created_this_week,
+        high_priority_pending=high_priority_pending,
+        medium_priority_pending=medium_priority_pending,
+        low_priority_pending=low_priority_pending
+    )

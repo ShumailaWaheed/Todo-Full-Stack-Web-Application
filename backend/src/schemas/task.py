@@ -45,3 +45,40 @@ class TaskListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+class TaskCompletionTrend(BaseModel):
+    """Schema for task completion trend data point."""
+    week: str  # ISO date string for start of week
+    completed: int
+
+
+class TaskCompletionTrendsResponse(BaseModel):
+    """Schema for returning task completion trends."""
+    trends: list[TaskCompletionTrend]
+
+
+class WeeklyTaskActivity(BaseModel):
+    """Schema for weekly task activity data point."""
+    week: str  # ISO date string for start of week
+    created: int
+    completed: int
+
+
+class WeeklyTaskActivityResponse(BaseModel):
+    """Schema for returning weekly task activity."""
+    activity: list[WeeklyTaskActivity]
+
+
+class TaskAnalyticsSummary(BaseModel):
+    """Schema for task analytics summary."""
+    total_tasks: int
+    completed_tasks: int
+    pending_tasks: int
+    overdue_tasks: int
+    completion_rate: float
+    tasks_completed_this_week: int
+    tasks_created_this_week: int
+    high_priority_pending: int
+    medium_priority_pending: int
+    low_priority_pending: int

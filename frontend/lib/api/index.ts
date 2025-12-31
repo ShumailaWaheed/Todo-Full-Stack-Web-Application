@@ -1,5 +1,39 @@
 // frontend/lib/api/index.ts
 import { Token, LoginRequest, RefreshTokenRequest, Task, TaskCreate, TaskUpdate, TaskToggleComplete, TaskListResponse } from '../types';
+import { Project, ProjectCreate } from '../types/project';
+
+// Analytics types
+export interface TaskCompletionTrend {
+  week: string;
+  completed: number;
+}
+
+export interface TaskCompletionTrendsResponse {
+  trends: TaskCompletionTrend[];
+}
+
+export interface WeeklyTaskActivity {
+  week: string;
+  created: number;
+  completed: number;
+}
+
+export interface WeeklyTaskActivityResponse {
+  activity: WeeklyTaskActivity[];
+}
+
+export interface TaskAnalyticsSummary {
+  total_tasks: number;
+  completed_tasks: number;
+  pending_tasks: number;
+  overdue_tasks: number;
+  completion_rate: number;
+  tasks_completed_this_week: number;
+  tasks_created_this_week: number;
+  high_priority_pending: number;
+  medium_priority_pending: number;
+  low_priority_pending: number;
+}
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
@@ -185,6 +219,55 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify(completionData),
     });
+  }
+
+  // Analytics methods
+  async getTaskCompletionTrends(userId: string, weeks: number = 8): Promise<TaskCompletionTrendsResponse> {
+    return this.request<TaskCompletionTrendsResponse>(
+      `/api/${userId}/analytics/completion-trends?weeks=${weeks}`,
+      { method: 'GET' }
+    );
+  }
+
+  async getWeeklyTaskActivity(userId: string, weeks: number = 8): Promise<WeeklyTaskActivityResponse> {
+    return this.request<WeeklyTaskActivityResponse>(
+      `/api/${userId}/analytics/weekly-activity?weeks=${weeks}`,
+      { method: 'GET' }
+    );
+  }
+
+  async getTaskAnalyticsSummary(userId: string): Promise<TaskAnalyticsSummary> {
+    return this.request<TaskAnalyticsSummary>(
+      `/api/${userId}/analytics/summary`,
+      { method: 'GET' }
+    );
+  }
+
+  // Project methods
+  async getProjects(userId: string): Promise<Project[]> {
+    return this.request<Project[]>(`/api/${userId}/projects`, { method: 'GET' });
+  }
+
+  async getProject(userId: string, projectId: string): Promise<Project> {
+    return this.request<Project>(`/api/${userId}/projects/${projectId}`, { method: 'GET' });
+  }
+
+  async createProject(userId: string, projectData: ProjectCreate): Promise<Project> {
+    return this.request<Project>(`/api/${userId}/projects`, {
+      method: 'POST',
+      body: JSON.stringify(projectData),
+    });
+  }
+
+  async updateProject(userId: string, projectId: string, projectData: Partial<ProjectCreate>): Promise<Project> {
+    return this.request<Project>(`/api/${userId}/projects/${projectId}`, {
+      method: 'PUT',
+      body: JSON.stringify(projectData),
+    });
+  }
+
+  async deleteProject(userId: string, projectId: string): Promise<void> {
+    await this.request<void>(`/api/${userId}/projects/${projectId}`, { method: 'DELETE' });
   }
 }
 

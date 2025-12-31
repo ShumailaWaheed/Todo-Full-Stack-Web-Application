@@ -1,6 +1,7 @@
 // frontend/lib/types/index.ts
 export * from './user';
 export * from './task';
+export * from './project';
 
 // API response types
 export interface APIResponse<T> {

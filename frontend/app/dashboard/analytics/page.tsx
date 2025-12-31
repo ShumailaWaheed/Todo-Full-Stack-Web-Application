@@ -1,224 +1,149 @@
 // frontend/app/dashboard/analytics/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../lib/auth/context';
 import { apiService } from '../../../lib/api';
-import { Task } from '../../../lib/types';
-import { FaChartBar, FaCalendarAlt, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { Task } from '../../../lib/types/task';
+import {
+  FaChartLine,
+  FaArrowTrendUp,
+  FaBolt,
+  FaLayerGroup,
+  FaCircle,
+  FaClock,
+  FaCheck,
+  FaTerminal
+} from 'react-icons/fa6';
+import TaskInsightsCharts from '../../../components/dashboard/task-insights-charts';
 
-const AnalyticsPage: React.FC = () => {
+const IntelligencePage: React.FC = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadTasks();
-    }
+    const fetchData = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const res = await apiService.getTasks(user.id);
+        setTasks(res.tasks || []);
+      } catch (err) {
+        console.error('Intelligence Sync Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [user]);
 
-  const loadTasks = async () => {
-    if (!user) return;
+  const stats = useMemo(() => {
+    const total = tasks.length || 1;
+    const completed = tasks.filter(t => t.completed).length;
+    const rate = Math.round((completed / total) * 100);
+    const active = tasks.filter(t => !t.completed).length;
+    const high = tasks.filter(t => !t.completed && t.priority === 'high').length;
 
-    try {
-      setLoading(true);
-      const response = await apiService.getTasks(user.id);
-      setTasks(response.tasks);
-    } catch (err) {
-      console.error('Failed to load tasks:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        alert('Unable to connect to the server. Please check your network connection and try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    return [
+      { label: 'Neural_Efficiency', value: `${rate}%`, icon: FaBolt, color: '#8b5cf6' },
+      { label: 'Active_Vectors', value: active, icon: FaClock, color: '#3b82f6' },
+      { label: 'High_Risk_Objectives', value: high, icon: FaArrowTrendUp, color: '#ef4444' },
+      { label: 'Neutralized_Total', value: completed, icon: FaCheck, color: '#10b981' },
+    ];
+  }, [tasks]);
 
-  // Calculate analytics
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.completed).length;
-  const pendingTasks = totalTasks - completedTasks;
-  const overdueTasks = tasks.filter(task => !task.completed && task.due_date && new Date(task.due_date) < new Date()).length;
-  const completedPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-  // Calculate weekly completion rate
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday of current week
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6); // Saturday of current week
-
-  const tasksThisWeek = tasks.filter(task => {
-    const taskDate = new Date(task.created_at);
-    return taskDate >= weekStart && taskDate <= weekEnd;
-  });
-
-  const completedThisWeek = tasksThisWeek.filter(task => task.completed).length;
-  const weeklyCompletionRate = tasksThisWeek.length > 0 ? Math.round((completedThisWeek / tasksThisWeek.length) * 100) : 0;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-gray-400">Loading analytics...</p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="max-w-6xl mx-auto p-8 space-y-8">
+       <div className="h-20 bg-white/5 animate-pulse rounded-2xl" />
+       <div className="grid grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-white/5 animate-pulse rounded-3xl" />)}
+       </div>
+    </div>
+  );
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <div className="flex items-center">
-          <FaChartBar className="text-purple-400 text-2xl mr-3" />
-          <h1 className="text-2xl font-bold text-white">Analytics & Insights</h1>
-        </div>
-        <p className="text-gray-400 mt-2">Track your productivity and task completion trends</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-orange-500/20 to-pink-500/20 mr-4">
-              <FaChartBar className="text-orange-400 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Total Tasks</p>
-              <p className="text-2xl font-bold text-white">{totalTasks}</p>
-            </div>
-          </div>
+    <div className="max-w-7xl mx-auto space-y-10 p-4 lg:p-8 animate-in fade-in duration-1000">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+           <div className="flex items-center gap-2 mb-2">
+              <FaChartLine className="text-[#8b5cf6] text-xs" />
+              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Intelligence_Deep_Scan</span>
+           </div>
+           <h1 className="text-4xl font-black text-white tracking-tighter uppercase font-mono">System Analytics</h1>
+           <p className="text-white/20 text-[10px] mt-1 font-bold uppercase tracking-widest">Real-time neural feedback enabled</p>
         </div>
 
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-green-500/20 to-teal-500/20 mr-4">
-              <FaCheckCircle className="text-green-400 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Completed</p>
-              <p className="text-2xl font-bold text-white">{completedTasks}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-orange-500/20 to-yellow-500/20 mr-4">
-              <FaClock className="text-orange-400 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Pending</p>
-              <p className="text-2xl font-bold text-white">{pendingTasks}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-red-500/20 to-pink-500/20 mr-4">
-              <FaExclamationTriangle className="text-red-400 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Overdue</p>
-              <p className="text-2xl font-bold text-white">{overdueTasks}</p>
-            </div>
-          </div>
+        <div className="flex items-center gap-4">
+           <div className="px-5 py-2.5 rounded-2xl bg-[#8b5cf6]/5 border border-[#8b5cf6]/20 flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></div>
+              <span className="text-[9px] font-black text-white uppercase tracking-widest">Global_Sync_Stable</span>
+           </div>
         </div>
       </div>
 
-      {/* Progress Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-          <h2 className="text-xl font-bold text-white mb-6">Overall Completion Rate</h2>
-          <div className="flex justify-center">
-            <div className="relative w-48 h-48">
-              <div className="absolute w-full h-full rounded-full border-8 border-gray-700/50"></div>
-              <div
-                className="absolute w-full h-full rounded-full border-8 border-transparent border-l-green-500 border-t-green-500"
-                style={{
-                  transform: `rotate(${(completedPercentage / 100) * 360}deg)`,
-                  clipPath: `conic-gradient(transparent 0% ${completedPercentage}%/, #22c55e ${completedPercentage}% 100%)`
-                }}
-              ></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <span className="text-3xl font-bold text-white">{completedPercentage}%</span>
-                  <p className="text-gray-400">Completed</p>
-                </div>
+      {/* Hero Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((s, i) => (
+          <div key={i} className="group relative p-8 rounded-[2.5rem] bg-black/40 border border-white/5 hover:border-[#8b5cf6]/30 transition-all duration-500 overflow-hidden">
+             {/* Hover Glow */}
+             <div className="absolute -inset-1 bg-gradient-to-br from-[#8b5cf6]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+             <div className="relative z-10">
+                <s.icon className="text-xl mb-4" style={{ color: s.color }} />
+                <h4 className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">{s.label}</h4>
+                <p className="text-4xl font-black text-white tracking-tighter italic">{s.value}</p>
+             </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-8">
+           {/* Reusing our High-End Chart Engine */}
+           <TaskInsightsCharts className="h-[600px] bg-black/40 border border-white/5" />
+        </div>
+
+        <div className="lg:col-span-4 space-y-10">
+           {/* Detailed Performance Metrics */}
+           <div className="p-8 rounded-[3rem] border border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent backdrop-blur-xl">
+              <h3 className="text-xs font-black text-[#8b5cf6] uppercase tracking-[0.3em] mb-10">Performance_Matrix</h3>
+
+              <div className="space-y-12">
+                 {[
+                   { label: 'Operational_Uptime', val: 99.8, color: '#8b5cf6' },
+                   { label: 'Neural_Precision', val: 74.2, color: '#ec4899' },
+                   { label: 'Response_Velocity', val: 88.5, color: '#f59e0b' }
+                 ].map((m, i) => (
+                   <div key={i} className="space-y-3">
+                      <div className="flex justify-between items-end">
+                         <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">{m.label}</span>
+                         <span className="text-sm font-black text-white">{m.val}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                         <div
+                          className="h-full rounded-full animate-in slide-in-from-left duration-1000"
+                          style={{ width: `${m.val}%`, backgroundColor: m.color, boxShadow: `0 0 10px ${m.color}` }}
+                         />
+                      </div>
+                   </div>
+                 ))}
               </div>
-            </div>
-          </div>
-        </div>
+           </div>
 
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-          <h2 className="text-xl font-bold text-white mb-6">Weekly Completion Rate</h2>
-          <div className="flex justify-center">
-            <div className="relative w-48 h-48">
-              <div className="absolute w-full h-full rounded-full border-8 border-gray-700/50"></div>
-              <div
-                className="absolute w-full h-full rounded-full border-8 border-transparent border-l-purple-500 border-t-purple-500"
-                style={{
-                  transform: `rotate(${(weeklyCompletionRate / 100) * 360}deg)`,
-                  clipPath: `conic-gradient(transparent 0% ${weeklyCompletionRate}%/, #a855f7 ${weeklyCompletionRate}% 100%)`
-                }}
-              ></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <span className="text-3xl font-bold text-white">{weeklyCompletionRate}%</span>
-                  <p className="text-gray-400">This Week</p>
-                </div>
+           <div className="p-8 rounded-[3rem] border border-white/5 bg-black/20 text-center py-12">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4 border border-white/5">
+                 <FaTerminal className="text-[#8b5cf6] text-xs" />
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Priority Distribution */}
-      <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-        <h2 className="text-xl font-bold text-white mb-6">Task Distribution by Priority</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gray-700/30 p-4 rounded-xl">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-red-400 font-medium">High Priority</span>
-              <span className="text-white font-bold">{tasks.filter(t => t.priority === 'high').length}</span>
-            </div>
-            <div className="w-full bg-gray-600/50 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full"
-                style={{ width: `${tasks.length ? (tasks.filter(t => t.priority === 'high').length / tasks.length) * 100 : 0}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="bg-gray-700/30 p-4 rounded-xl">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-yellow-400 font-medium">Medium Priority</span>
-              <span className="text-white font-bold">{tasks.filter(t => t.priority === 'medium').length}</span>
-            </div>
-            <div className="w-full bg-gray-600/50 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-yellow-500 to-amber-500 h-2 rounded-full"
-                style={{ width: `${tasks.length ? (tasks.filter(t => t.priority === 'medium').length / tasks.length) * 100 : 0}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="bg-gray-700/30 p-4 rounded-xl">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-green-400 font-medium">Low Priority</span>
-              <span className="text-white font-bold">{tasks.filter(t => t.priority === 'low').length}</span>
-            </div>
-            <div className="w-full bg-gray-600/50 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full"
-                style={{ width: `${tasks.length ? (tasks.filter(t => t.priority === 'low').length / tasks.length) * 100 : 0}%` }}
-              ></div>
-            </div>
-          </div>
+              <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-1">Export_Logs</h4>
+              <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Download full tactical history</p>
+              <button className="mt-8 px-8 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[#8b5cf6]/40 transition-all text-[9px] font-black text-white uppercase tracking-widest">Initialize_Export</button>
+           </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default AnalyticsPage;
+export default IntelligencePage;
