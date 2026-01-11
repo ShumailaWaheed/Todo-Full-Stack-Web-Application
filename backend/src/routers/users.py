@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import Optional
-from src.database.session import get_session_dep
-from src.models.user import User
-from src.schemas.user import UserUpdate, UserResponse
-from src.middleware.auth import get_current_user
+from database.session import get_session_dep
+from models.user import User
+from schemas.user import UserUpdate, UserResponse
+from middleware.auth import get_current_user
 import uuid
 from datetime import datetime
 
@@ -68,7 +68,7 @@ def export_user_data(
     session: Session = Depends(get_session_dep)
 ):
     """Export all user data in JSON format."""
-    from src.models.task import Task
+    from models.task import Task
     from sqlmodel import select
     import json
 

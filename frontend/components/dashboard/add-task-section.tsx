@@ -7,16 +7,16 @@ import {
   FaPlus,
   FaChevronRight,
   FaArrowRight,
-  FaPenToSquare as FaEdit,
+  FaPenSquare as FaEdit,
   FaKeyboard,
   FaTasks,
   FaFlag,
   FaCheck,
   FaLightbulb,
-  FaShieldHalved,
+  FaShieldAlt as FaShieldHalved,
   FaBolt,
   FaMicrochip
-} from 'react-icons/fa6';
+} from 'react-icons/fa';
 
 interface AddTaskSectionProps {
   className?: string;

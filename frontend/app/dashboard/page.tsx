@@ -12,7 +12,7 @@ import {
   FaFolder,
   FaStar,
   FaBolt,
-  FaArrowTrendUp,
+  FaChartLine,
 } from 'react-icons/fa6';
 
 // Components
@@ -157,7 +157,7 @@ const DashboardPage: React.FC = () => {
               </div>
 
               <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-1000">
-                <FaArrowTrendUp className="text-[180px] text-white" />
+                <FaChartLine className="text-[180px] text-white" />
               </div>
 
               <div className="relative z-10">

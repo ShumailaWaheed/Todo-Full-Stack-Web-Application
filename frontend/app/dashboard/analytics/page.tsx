@@ -7,7 +7,6 @@ import { apiService } from '../../../lib/api';
 import { Task } from '../../../lib/types/task';
 import {
   FaChartLine,
-  FaArrowTrendUp,
   FaBolt,
   FaLayerGroup,
   FaCircle,
@@ -48,7 +47,7 @@ const IntelligencePage: React.FC = () => {
     return [
       { label: 'Neural_Efficiency', value: `${rate}%`, icon: FaBolt, color: '#8b5cf6' },
       { label: 'Active_Vectors', value: active, icon: FaClock, color: '#3b82f6' },
-      { label: 'High_Risk_Objectives', value: high, icon: FaArrowTrendUp, color: '#ef4444' },
+      { label: 'High_Risk_Objectives', value: high, icon: FaTerminal, color: '#ef4444' },
       { label: 'Neutralized_Total', value: completed, icon: FaCheck, color: '#10b981' },
     ];
   }, [tasks]);

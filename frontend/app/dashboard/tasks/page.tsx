@@ -8,15 +8,15 @@ import { Task } from '../../../lib/types/task';
 import {
   FaTerminal,
   FaFilter,
-  FaSortAmountDown,
-  FaMagnifyingGlass as FaSearch,
+  FaSortAmountDownAlt as FaSortAmountDown,
+  FaSearch,
   FaCheck,
   FaClock,
-  FaTriangleExclamation,
+  FaExclamationTriangle as FaTriangleExclamation,
   FaCircle,
   FaPlus,
   FaTrash
-} from 'react-icons/fa6';
+} from 'react-icons/fa';
 import AddTaskSection from '../../../components/dashboard/add-task-section';
 
 const TasksPage: React.FC = () => {

@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { useRouter } from 'next/navigation';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTimes, FaSignInAlt } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTimes, FaSignInAlt, FaGoogle, FaGithub } from 'react-icons/fa';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -29,7 +29,7 @@ const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      router.push('/dashboard/tasks');
+      router.push('/dashboard');
       router.refresh();
     } catch (err) {
       console.error('Login failed:', err);
@@ -37,6 +37,18 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle social login (Google)
+  const handleGoogleLogin = () => {
+    // In a real implementation, this would redirect to Google OAuth
+    setError('Google login is not implemented yet in this demo');
+  };
+
+  // Handle social login (GitHub)
+  const handleGithubLogin = () => {
+    // In a real implementation, this would redirect to GitHub OAuth
+    setError('GitHub login is not implemented yet in this demo');
   };
 
   return (
@@ -50,7 +62,7 @@ const Login: React.FC = () => {
             Don't have an account?{' '}
             <a
               href="/auth/sign-up"
-              className="font-medium text-purple-400 hover:text-purple-300"
+              className="font-medium text-purple-400 hover:text-purple-300 transition-colors duration-200"
             >
               Sign up
             </a>
@@ -68,11 +80,49 @@ const Login: React.FC = () => {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        {/* Social Login Buttons */}
+        <div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-800/50 text-gray-400">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-md shadow-sm bg-gray-700/50 text-sm font-medium text-white hover:bg-gray-600/50 transition-colors duration-200"
+            >
+              <FaGoogle className="h-5 w-5" />
+              <span className="ml-2">Google</span>
+            </button>
+
+            <button
+              onClick={handleGithubLogin}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-md shadow-sm bg-gray-700/50 text-sm font-medium text-white hover:bg-gray-600/50 transition-colors duration-200"
+            >
+              <FaGithub className="h-5 w-5" />
+              <span className="ml-2">GitHub</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+          </div>
+        </div>
+
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email address
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -140,7 +190,7 @@ const Login: React.FC = () => {
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-purple-400 hover:text-purple-300">
+              <a href="#" className="font-medium text-purple-400 hover:text-purple-300 transition-colors duration-200">
                 Forgot your password?
               </a>
             </div>

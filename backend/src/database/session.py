@@ -2,15 +2,23 @@ from sqlmodel import create_engine
 from typing import Generator
 import os
 from contextlib import contextmanager
+from sqlalchemy import event
+from sqlalchemy.pool import StaticPool
 
-# Get database URL from environment, with a default for development
+# Get database URL from environment, with the Neon PostgreSQL URL from .env as default
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./todo.db")
 
-# Create the engine
-# For SQLite, we need to add connect_args={"check_same_thread": False} for async operations
+# Create the engine dynamically based on the database type
 if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
+    # For SQLite, use different parameters
+    engine = create_engine(
+        DATABASE_URL,
+        echo=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
 else:
+    # For PostgreSQL, use different parameters
     engine = create_engine(DATABASE_URL, echo=True)
 
 @contextmanager

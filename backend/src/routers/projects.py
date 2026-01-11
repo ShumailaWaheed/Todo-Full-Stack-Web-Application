@@ -5,11 +5,11 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
-from src.database.session import get_session_dep
-from src.models.user import User
-from src.models.project import Project, ProjectCreate, ProjectUpdate, ProjectRead
-from src.schemas.project import ProjectResponse
-from src.middleware.auth import get_current_user
+from database.session import get_session_dep
+from models.user import User
+from models.project import Project, ProjectCreate, ProjectUpdate, ProjectRead
+from schemas.project import ProjectResponse
+from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 

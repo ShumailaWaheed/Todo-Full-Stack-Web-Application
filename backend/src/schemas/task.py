@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, field_validator
+from typing import Optional, List
 from datetime import datetime
 
 class TaskBase(BaseModel):
@@ -9,6 +9,19 @@ class TaskBase(BaseModel):
     completed: bool = False
     due_date: Optional[datetime] = None
     priority: Optional[str] = "medium"
+
+    @field_validator('due_date', mode='before')
+    @classmethod
+    def parse_due_date(cls, v):
+        """Parse due_date from string if needed."""
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v
+        try:
+            return datetime.fromisoformat(v.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            return None
 
 class TaskCreate(TaskBase):
     """Schema for creating a new task."""
@@ -25,6 +38,19 @@ class TaskUpdate(BaseModel):
     due_date: Optional[datetime] = None
     priority: Optional[str] = None
 
+    @field_validator('due_date', mode='before')
+    @classmethod
+    def parse_due_date(cls, v):
+        """Parse due_date from string if needed."""
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v
+        try:
+            return datetime.fromisoformat(v.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            return None
+
 class TaskToggleComplete(BaseModel):
     """Schema for toggling task completion status."""
     completed: bool
@@ -36,15 +62,16 @@ class Task(TaskBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {'from_attributes': True}
 
 class TaskListResponse(BaseModel):
     """Schema for returning a list of tasks."""
-    tasks: list[Task]
+    tasks: List[Task]
     total: int
     offset: int
     limit: int
+
+    model_config = {'from_attributes': True}
 
 
 class TaskCompletionTrend(BaseModel):

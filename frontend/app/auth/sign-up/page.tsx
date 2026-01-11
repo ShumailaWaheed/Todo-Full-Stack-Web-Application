@@ -2,10 +2,10 @@
 'use client';
 
 import React from 'react';
-import SignupSignin from '../../../components/auth/signup-signin';
+import Signup from '../../../components/auth/signup';
 
 const SignUpPage: React.FC = () => {
-  return <SignupSignin />;
+  return <Signup />;
 };
 
 export default SignUpPage;

@@ -8,6 +8,7 @@ import {
   FaStar,
   FaCalendarAlt,
   FaBolt,
+  FaArrowUp,
 } from 'react-icons/fa';
 import { apiService } from '../../lib/api';
 import { useAuth } from '../../lib/auth/context';
@@ -115,7 +116,7 @@ const TodaysFocus: React.FC<TodaysFocusProps> = ({ className = '' }) => {
               {/* Status Indicator */}
               {!task.completed && (
                 <div className="opacity-0 group-hover:opacity-100 transition-all text-[8px] font-black text-[#8b5cf6] flex items-center gap-1">
-                   EXECUTE <FaArrowTrendUp className="animate-bounce" style={{ animationDuration: '2s' }} />
+                   EXECUTE <FaArrowUp className="animate-bounce" style={{ animationDuration: '2s' }} />
                 </div>
               )}
 

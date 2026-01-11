@@ -35,7 +35,7 @@ export interface TaskAnalyticsSummary {
   low_priority_pending: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002';
 
 class ApiService {
   private accessToken: string | null = null;

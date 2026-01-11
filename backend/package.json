@@ -1,0 +1,21 @@
+{
+  "name": "todo-api-mock-server",
+  "version": "1.0.0",
+  "description": "Mock server for Todo API",
+  "main": "mock_api_server.js",
+  "scripts": {
+    "start": "node mock_api_server.js",
+    "dev": "nodemon mock_api_server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.22.1"
+  },
+  "keywords": [
+    "todo",
+    "api",
+    "mock"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useMediaQuery } from '../../lib/hooks/use-media-query';
 import {
   FaHouse as FaHome,
-  FaArrowTrendUp as FaChartLine,
+  FaChartLine,
   FaGear as FaCog,
   FaArrowRightFromBracket as FaSignOutAlt,
   FaMagnifyingGlass as FaSearch,

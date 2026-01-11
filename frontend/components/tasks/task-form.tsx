@@ -1,9 +1,18 @@
 // frontend/components/tasks/task-form.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TaskCreate, TaskUpdate } from '../../lib/types';
-import { FaTimes, FaSave } from 'react-icons/fa';
+import {
+  FaTimes,
+  FaCheck,
+  FaArrowRight,
+  FaSpinner,
+  FaFlag,
+  FaCalendar,
+  FaAlignLeft,
+  FaBolt
+} from 'react-icons/fa6';
 
 interface TaskFormProps {
   initialData?: TaskUpdate;
@@ -25,20 +34,26 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [dueDate, setDueDate] = useState(initialData?.due_date || '');
   const [priority, setPriority] = useState(initialData?.priority || 'medium');
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
+  const [charCount, setCharCount] = useState(0);
+
+  useEffect(() => {
+    setCharCount(title.length);
+  }, [title]);
 
   const validateForm = () => {
     if (!title.trim()) {
-      setError('Title is required');
+      setError('Operation identifier required');
       return false;
     }
 
     if (title.length > 200) {
-      setError('Title must be 200 characters or less');
+      setError('Identifier exceeds 200 character limit');
       return false;
     }
 
     if (description && description.length > 2000) {
-      setError('Description must be 2000 characters or less');
+      setError('Brief exceeds 2000 character limit');
       return false;
     }
 
@@ -61,7 +76,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
     };
 
     if (isEditing) {
-      // For updates, only include fields that have changed
       const updateData: TaskUpdate = {};
       if (title !== (initialData?.title || '')) updateData.title = title.trim();
       if (description !== (initialData?.description || '')) updateData.description = description.trim() || undefined;
@@ -74,116 +88,194 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
   };
 
+  const priorityOptions = [
+    { value: 'low', label: 'Standard', color: 'text-[#10b981]', bg: 'bg-[#10b981]/10 border-[#10b981]/20' },
+    { value: 'medium', label: 'Elevated', color: 'text-[#f59e0b]', bg: 'bg-[#f59e0b]/10 border-[#f59e0b]/20' },
+    { value: 'high', label: 'Critical', color: 'text-[#ef4444]', bg: 'bg-[#ef4444]/10 border-[#ef4444]/20' }
+  ];
+
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-lg border border-gray-600 p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-white">
-          {isEditing ? 'Edit Task' : 'Create New Task'}
-        </h2>
-        {onCancel && (
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-200"
-            aria-label="Close form"
-          >
-            <FaTimes />
-          </button>
-        )}
+    <form onSubmit={handleSubmit} noValidate>
+      {/* Progress Indicator */}
+      <div className="flex items-center justify-center gap-2 mb-8">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className={`h-1 rounded-full transition-all duration-500 ${
+              i <= step ? 'flex-1 bg-[#8b5cf6] shadow-[0_0_10px_#8b5cf6]' : 'w-8 bg-white/10'
+            }`}
+          />
+        ))}
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-500/20 text-red-300 rounded-lg border border-red-500/30">
+        <div className="mb-6 p-4 rounded-xl bg-[#ef4444]/10 border border-[#ef4444]/20 text-[#ef4444] text-[10px] font-bold uppercase tracking-widest text-center animate-in shake">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate>
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
-            Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-            placeholder="Enter task title"
-            maxLength={200}
-            required
-          />
-        </div>
+      {/* Step 1: Task Name */}
+      {step === 1 && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="space-y-2">
+            <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+              <FaBolt className="text-[#8b5cf6] text-[10px]" />
+              Operation Identifier
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-bold text-white placeholder:text-white/10 focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none"
+              placeholder="DEFINE OBJECTIVE NAME"
+              maxLength={200}
+              autoFocus
+            />
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
+                {charCount}/200 characters
+              </span>
+              <span className={`text-[8px] font-bold uppercase tracking-widest transition-colors ${
+                charCount > 180 ? 'text-[#ef4444]' : 'text-white/20'
+              }`}>
+                {200 - charCount} remaining
+              </span>
+            </div>
+          </div>
 
-        <div className="mb-4">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-            placeholder="Enter task description"
-            maxLength={2000}
-          />
+          <div className="space-y-2">
+            <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+              <FaAlignLeft className="text-[#8b5cf6] text-[10px]" />
+              Mission Brief
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-medium text-white placeholder:text-white/10 focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none resize-none"
+              placeholder="Define operational parameters and objectives..."
+            />
+          </div>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label htmlFor="dueDate" className="block text-sm font-medium text-gray-300 mb-1">
-              Due Date
+      {/* Step 2: Due Date */}
+      {step === 2 && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="space-y-2">
+            <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+              <FaCalendar className="text-[#8b5cf6] text-[10px]" />
+              Execution Deadline
             </label>
             <input
               type="date"
               id="dueDate"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-bold text-white focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none"
             />
-          </div>
-
-          <div>
-            <label htmlFor="priority" className="block text-sm font-medium text-gray-300 mb-1">
-              Priority
-            </label>
-            <select
-              id="priority"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
-              className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+            <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest ml-1">
+              Set timeline for objective completion
+            </p>
           </div>
         </div>
+      )}
 
-        <div className="flex justify-end space-x-3">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2.5 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 transition-all duration-200"
-            >
-              Cancel
-            </button>
-          )}
+      {/* Step 3: Priority */}
+      {step === 3 && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+            <FaFlag className="text-[#8b5cf6] text-[10px]" />
+            Risk Assessment Level
+          </label>
+          <div className="grid grid-cols-3 gap-4">
+            {priorityOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPriority(opt.value as any)}
+                className={`p-4 rounded-2xl border transition-all duration-500 ${
+                  priority === opt.value
+                    ? `${opt.bg} border-current`
+                    : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+                }`}
+              >
+                <div className={`text-center ${opt.color}`}>
+                  <FaFlag className="text-sm mx-auto mb-2" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">{opt.label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Summary */}
+          <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+            <h4 className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-3">Mission Parameters</h4>
+            <div className="space-y-2 text-[10px]">
+              <div className="flex justify-between">
+                <span className="text-white/40">Objective:</span>
+                <span className="text-white font-medium truncate max-w-[200px]">{title || 'Untitled'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/40">Deadline:</span>
+                <span className="text-white font-medium">{dueDate || 'Not set'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/40">Risk Level:</span>
+                <span className={`font-bold uppercase ${
+                  priority === 'high' ? 'text-[#ef4444]' :
+                  priority === 'medium' ? 'text-[#f59e0b]' : 'text-[#10b981]'
+                }`}>
+                  {priorityOptions.find(p => p.value === priority)?.label}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation Actions */}
+      <div className="flex items-center justify-between pt-8 mt-8 border-t border-white/5">
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={() => setStep(step - 1)}
+            className="text-[9px] font-black text-white/30 hover:text-white uppercase tracking-widest transition-colors"
+          >
+            Back
+          </button>
+        ) : (
+          <div />
+        )}
+
+        {step < 3 ? (
+          <button
+            type="button"
+            onClick={() => setStep(step + 1)}
+            disabled={step === 1 && !title.trim()}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 text-[#8b5cf6] text-[9px] font-black uppercase tracking-widest hover:bg-[#8b5cf6]/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Continue <FaArrowRight className="text-[10px]" />
+          </button>
+        ) : (
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30"
+            className="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#8b5cf6]/80 text-white text-[9px] font-black uppercase tracking-widest hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] transition-all disabled:opacity-50"
           >
-            <FaSave className="mr-2" />
-            {loading
-              ? (isEditing ? 'Updating...' : 'Creating...')
-              : (isEditing ? 'Update Task' : 'Create Task')
-            }
+            {loading ? (
+              <FaSpinner className="text-sm animate-spin" />
+            ) : (
+              <>
+                {isEditing ? 'Update Mission' : 'Initialize Operation'} <FaCheck className="text-[10px]" />
+              </>
+            )}
           </button>
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
 

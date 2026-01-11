@@ -6,9 +6,17 @@ import { User, Token } from '../types';
 import { apiService } from '../api';
 
 // Helper function to decode JWT token
-const decodeToken = (token: string) => {
+const decodeToken = (token: string | null | undefined) => {
   try {
+    if (!token) {
+      return null;
+    }
+
     const base64Url = token.split('.')[1];
+    if (!base64Url) {
+      return null;
+    }
+
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
       atob(base64)

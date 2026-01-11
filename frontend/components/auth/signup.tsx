@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { useRouter } from 'next/navigation';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTimes, FaCheck } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTimes, FaCheck, FaGoogle, FaGithub } from 'react-icons/fa';
 
 const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -15,9 +15,10 @@ const Signup: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
 
   const router = useRouter();
-  const { login } = useAuth(); // Using login function since backend creates users on login
+  const { login } = useAuth();
 
   const validateForm = () => {
     if (!name.trim()) {
@@ -32,6 +33,11 @@ const Signup: React.FC = () => {
 
     if (!/\S+@\S+\.\S+/.test(email)) {
       setError('Email address is invalid');
+      return false;
+    }
+
+    if (emailExists) {
+      setError('An account with this email already exists. Please sign in instead.');
       return false;
     }
 
@@ -54,8 +60,43 @@ const Signup: React.FC = () => {
     return true;
   };
 
+  // Check if email already exists before submitting
+  const checkEmailExists = async () => {
+    if (!email) return false;
+
+    try {
+      // Make a request to check if user exists
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002'}/auth/check-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      setEmailExists(data.exists);
+
+      if (data.exists) {
+        setError('An account with this email already exists. Please sign in instead.');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error checking email:', err);
+      // If there's an error checking, continue with signup
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if email already exists before submitting
+    const emailExists = await checkEmailExists();
+    if (emailExists) {
+      return;
+    }
 
     if (!validateForm()) {
       return;
@@ -65,10 +106,9 @@ const Signup: React.FC = () => {
     setError(null);
 
     try {
-      // In our implementation, the backend creates a user on login if they don't exist
       await login(email, password);
       // Redirect to dashboard after successful registration
-      router.push('/dashboard/tasks');
+      router.push('/dashboard');
       router.refresh();
     } catch (err) {
       console.error('Registration failed:', err);
@@ -76,6 +116,18 @@ const Signup: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle social login (Google)
+  const handleGoogleLogin = () => {
+    // In a real implementation, this would redirect to Google OAuth
+    setError('Google login is not implemented yet in this demo');
+  };
+
+  // Handle social login (GitHub)
+  const handleGithubLogin = () => {
+    // In a real implementation, this would redirect to GitHub OAuth
+    setError('GitHub login is not implemented yet in this demo');
   };
 
   return (
@@ -89,7 +141,7 @@ const Signup: React.FC = () => {
             Already have an account?{' '}
             <a
               href="/auth/sign-in"
-              className="font-medium text-purple-400 hover:text-purple-300"
+              className="font-medium text-purple-400 hover:text-purple-300 transition-colors duration-200"
             >
               Sign in
             </a>
@@ -107,11 +159,49 @@ const Signup: React.FC = () => {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        {/* Social Login Buttons */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-800/50 text-gray-400">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-md shadow-sm bg-gray-700/50 text-sm font-medium text-white hover:bg-gray-600/50 transition-colors duration-200"
+            >
+              <FaGoogle className="h-5 w-5" />
+              <span className="ml-2">Google</span>
+            </button>
+
+            <button
+              onClick={handleGithubLogin}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-md shadow-sm bg-gray-700/50 text-sm font-medium text-white hover:bg-gray-600/50 transition-colors duration-200"
+            >
+              <FaGithub className="h-5 w-5" />
+              <span className="ml-2">GitHub</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+          </div>
+        </div>
+
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
-                Name
+                Full Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -124,16 +214,19 @@ const Signup: React.FC = () => {
                   autoComplete="name"
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (emailExists) setEmailExists(false);
+                  }}
                   className="appearance-none rounded-lg relative block w-full px-12 py-3 bg-gray-700/50 border border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your name"
+                  placeholder="Enter your full name"
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email address
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -146,11 +239,23 @@ const Signup: React.FC = () => {
                   autoComplete="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full px-12 py-3 bg-gray-700/50 border border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailExists) setEmailExists(false);
+                  }}
+                  onBlur={checkEmailExists} // Check email when user leaves the field
+                  className={`appearance-none rounded-lg relative block w-full px-12 py-3 bg-gray-700/50 border ${emailExists ? 'border-red-500' : 'border-gray-600'} placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300`}
                   placeholder="Enter your email"
                 />
+                {emailExists && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <FaTimes className="h-5 w-5 text-red-400" />
+                  </div>
+                )}
               </div>
+              {emailExists && (
+                <p className="mt-1 text-sm text-red-400">An account with this email already exists</p>
+              )}
             </div>
 
             <div>
@@ -170,7 +275,7 @@ const Signup: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none rounded-lg relative block w-full px-12 py-3 pr-12 bg-gray-700/50 border border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                 />
                 <button
                   type="button"
@@ -184,6 +289,7 @@ const Signup: React.FC = () => {
                   )}
                 </button>
               </div>
+              <p className="mt-1 text-xs text-gray-400">Use at least 6 characters</p>
             </div>
 
             <div>
@@ -220,6 +326,19 @@ const Signup: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex items-center">
+            <input
+              id="terms"
+              name="terms"
+              type="checkbox"
+              required
+              className="h-4 w-4 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
+            />
+            <label htmlFor="terms" className="ml-2 block text-sm text-gray-300">
+              I agree to the <a href="#" className="text-purple-400 hover:text-purple-300">Terms of Service</a> and <a href="#" className="text-purple-400 hover:text-purple-300">Privacy Policy</a>
+            </label>
+          </div>
+
           <div>
             <button
               type="submit"
@@ -231,7 +350,7 @@ const Signup: React.FC = () => {
               ) : (
                 <span className="flex items-center">
                   <FaCheck className="mr-2" />
-                  Sign up
+                  Create Account
                 </span>
               )}
             </button>

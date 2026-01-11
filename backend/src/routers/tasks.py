@@ -2,16 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select, func
 from typing import List
 from datetime import datetime, timedelta
-from src.database.session import get_session_dep
-from src.models.task import Task as TaskModel
-from src.schemas.task import (
+from database.session import get_session_dep
+from models.task import Task as TaskModel
+from schemas.task import (
     TaskCreate, TaskUpdate, Task as TaskSchema, TaskToggleComplete, TaskListResponse,
     TaskCompletionTrendsResponse, TaskCompletionTrend,
     WeeklyTaskActivityResponse, WeeklyTaskActivity,
     TaskAnalyticsSummary
 )
-from src.middleware.auth import get_current_user, verify_user_owns_resource
-from src.models.user import User
+from middleware.auth import get_current_user, verify_user_owns_resource
+from models.user import User
 import os
 
 router = APIRouter()

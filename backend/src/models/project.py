@@ -1,7 +1,9 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 from datetime import datetime
+from datetime import timezone
 import uuid
+from pydantic import ConfigDict
 
 if TYPE_CHECKING:
     from .user import User
@@ -18,16 +20,14 @@ class ProjectBase(SQLModel):
 
 
 class Project(ProjectBase, table=True):
-    __tablename__ = "projects"
-
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="users.id", nullable=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    user_id: str = Field(foreign_key="users.id")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Relationship
     user: "User" = Relationship(back_populates="projects")
-    tasks: list["Task"] = Relationship(back_populates="project")
+    tasks: List["Task"] = Relationship(back_populates="project")
 
 
 class ProjectCreate(ProjectBase):
@@ -41,6 +41,8 @@ class ProjectUpdate(ProjectBase):
 
 class ProjectRead(ProjectBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

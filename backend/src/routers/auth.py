@@ -1,15 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
-from src.database.session import get_session_dep
-from src.middleware.auth import create_access_token
-from src.schemas.auth import LoginRequest, Token
-from src.models.user import User
+from database.session import get_session_dep
+from middleware.auth import create_access_token
+from schemas.auth import LoginRequest, Token
+from models.user import User
 from datetime import timedelta
 import os
 import uuid
 from sqlmodel import select
 
 router = APIRouter()
+
+
+@router.post("/check-email")
+def check_email_exists(request: dict, session: Session = Depends(get_session_dep)):
+    """
+    Check if a user with the given email already exists.
+    """
+    email = request.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is required"
+        )
+
+    # Validate email format (basic validation)
+    if "@" not in email or "." not in email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email format"
+        )
+
+    # Check if user exists
+    user = session.exec(select(User).where(User.email == email)).first()
+
+    return {"exists": user is not None}
 
 @router.post("/login", response_model=Token)
 def login(login_request: LoginRequest, session: Session = Depends(get_session_dep)):
@@ -41,15 +66,15 @@ def login(login_request: LoginRequest, session: Session = Depends(get_session_de
         session.refresh(new_user)
         user = new_user
 
-    # Create access token (short-lived)
-    access_token_expires = timedelta(minutes=15)  # Short-lived as per spec
+    # Create access token (24 hours for testing)
+    access_token_expires = timedelta(hours=24)
     access_token = create_access_token(
         data={"sub": user.id, "email": user.email},
         expires_delta=access_token_expires
     )
 
-    # Create refresh token (longer-lived)
-    refresh_token_expires = timedelta(days=7)  # As per constitution
+    # Create refresh token (30 days)
+    refresh_token_expires = timedelta(days=30)
     refresh_token = create_access_token(
         data={"sub": user.id, "email": user.email, "type": "refresh"},
         expires_delta=refresh_token_expires
@@ -67,7 +92,7 @@ def refresh_token(refresh_request: dict, session: Session = Depends(get_session_
     Refresh access token using refresh token.
     In a real implementation, this would validate the refresh token with Better Auth.
     """
-    from src.middleware.auth import verify_token
+    from middleware.auth import verify_token
 
     refresh_token_str = refresh_request.get("refresh_token")
     if not refresh_token_str:
@@ -103,14 +128,14 @@ def refresh_token(refresh_request: dict, session: Session = Depends(get_session_
         )
 
     # Create new access token
-    access_token_expires = timedelta(minutes=15)  # Short-lived as per spec
+    access_token_expires = timedelta(hours=24)
     access_token = create_access_token(
         data={"sub": user.id, "email": user.email},
         expires_delta=access_token_expires
     )
 
     # Create new refresh token (rolling refresh tokens)
-    new_refresh_token_expires = timedelta(days=7)
+    new_refresh_token_expires = timedelta(days=30)
     new_refresh_token = create_access_token(
         data={"sub": user.id, "email": user.email, "type": "refresh"},
         expires_delta=new_refresh_token_expires

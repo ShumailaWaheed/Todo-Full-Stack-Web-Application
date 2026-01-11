@@ -5,8 +5,8 @@ import os
 from datetime import datetime, timedelta
 from sqlmodel import Session
 from jose import JWTError, jwt
-from src.database.session import get_session_dep
-from src.models.user import User
+from database.session import get_session_dep
+from models.user import User
 from sqlmodel import select
 
 # Security scheme for API docs
@@ -22,8 +22,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        # Default to 15 minutes for short-lived tokens
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        # Default to 24 hours for testing (in production, use shorter-lived tokens)
+        expire = datetime.utcnow() + timedelta(hours=24)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

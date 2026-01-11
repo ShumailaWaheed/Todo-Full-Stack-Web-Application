@@ -14,7 +14,8 @@ const Sidebar: React.FC = () => {
   const { theme } = useTheme();
 
   const navItems = [
-    { href: '/dashboard', label: 'Home', icon: <FaHome /> },
+    { href: '/', label: 'Home', icon: <FaHome /> },
+    { href: '/dashboard', label: 'Dashboard', icon: <FaChartBar /> },
     { href: '/dashboard/tasks', label: 'Tasks', icon: <FaTasks /> },
     { href: '/dashboard/projects', label: 'Projects', icon: <FaFolder /> },
     { href: '/dashboard/analytics', label: 'Analytics', icon: <FaChartBar /> },

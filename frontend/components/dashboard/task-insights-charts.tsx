@@ -9,7 +9,6 @@ import {
   FaBolt,
   FaLayerGroup,
   FaCircle,
-  FaArrowTrendUp,
 } from 'react-icons/fa6';
 import { apiService } from '../../lib/api';
 import { useAuth } from '../../lib/auth/context';
@@ -22,7 +21,7 @@ const TaskInsightsCharts: React.FC<TaskInsightsChartsProps> = ({ className = '' 
   const { user } = useAuth();
   const [activeChart, setActiveChart] = useState<'weekly' | 'status' | 'completion'>('weekly');
   const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -160,7 +159,7 @@ const TaskInsightsCharts: React.FC<TaskInsightsChartsProps> = ({ className = '' 
           <div className="w-full h-full px-2 flex flex-col justify-center">
              <div className="flex items-center justify-between mb-12">
                 <div className="p-4 rounded-3xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 shadow-inner">
-                   <FaArrowTrendUp className="text-3xl text-[#8b5cf6] animate-bounce" />
+                   <FaChartLine className="text-3xl text-[#8b5cf6] animate-bounce" />
                 </div>
                 <div className="text-right">
                    <p className="text-4xl font-black text-white tracking-tighter">+{rate > 50 ? 'Elite' : 'Synced'}</p>
