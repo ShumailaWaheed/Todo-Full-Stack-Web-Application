@@ -4,23 +4,32 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaTasks, FaFolder, FaChartBar, FaCheckCircle, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import { FaHouse as FaHome, FaTerminal, FaFolder, FaChartLine, FaCheck, FaGear as FaCog, FaArrowRightFromBracket as FaSignOutAlt } from 'react-icons/fa6';
 import { useAuth } from '../../lib/auth/context';
 import { useTheme } from '../../lib/theme/context';
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const router = useRouter();
+  const { logout, user } = useAuth();
   const { theme } = useTheme();
 
-  const navItems = [
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
+  // Show navigation items based on authentication status
+  const navItems = user ? [
     { href: '/', label: 'Home', icon: <FaHome /> },
-    { href: '/dashboard', label: 'Dashboard', icon: <FaChartBar /> },
-    { href: '/dashboard/tasks', label: 'Tasks', icon: <FaTasks /> },
-    { href: '/dashboard/projects', label: 'Projects', icon: <FaFolder /> },
-    { href: '/dashboard/analytics', label: 'Analytics', icon: <FaChartBar /> },
-    { href: '/dashboard/completed', label: 'Completed', icon: <FaCheckCircle /> },
+    { href: '/dashboard', label: 'Dashboard', icon: <FaChartLine /> },
+    { href: '/dashboard/tasks', label: 'Tasks', icon: <FaTerminal /> },
+    { href: '/dashboard/analytics', label: 'Analytics', icon: <FaChartLine /> },
+    { href: '/dashboard/completed', label: 'Completed', icon: <FaCheck /> },
     { href: '/dashboard/settings', label: 'Settings', icon: <FaCog /> },
+  ] : [
+    { href: '/', label: 'Home', icon: <FaHome /> },
   ];
 
   return (
@@ -63,18 +72,20 @@ const Sidebar: React.FC = () => {
           ))}
         </ul>
 
-        <div className="flex flex-col items-center">
-          <div className="p-3 border-t border-gray-700/50 flex justify-center">
-            <button
-              onClick={logout}
-              className="flex flex-col items-center py-3 px-2 rounded-xl transition-all duration-300 group relative text-gray-400 hover:text-white"
-            >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center hover:bg-gradient-to-r hover:from-pink-500/10 hover:to-red-500/10 hover:shadow-md hover:shadow-pink-500/20 transition-all duration-300">
-                <FaSignOutAlt className="text-lg group-hover:scale-110 transition-transform duration-200" />
-              </div>
-            </button>
+        {user && (
+          <div className="flex flex-col items-center">
+            <div className="p-3 border-t border-gray-700/50 flex justify-center">
+              <button
+                onClick={handleLogout}
+                className="flex flex-col items-center py-3 px-2 rounded-xl transition-all duration-300 group relative text-gray-400 hover:text-white"
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center hover:bg-gradient-to-r hover:from-pink-500/10 hover:to-red-500/10 hover:shadow-md hover:shadow-pink-500/20 transition-all duration-300">
+                  <FaSignOutAlt className="text-lg group-hover:scale-110 transition-transform duration-200" />
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </nav>
     </aside>
   );

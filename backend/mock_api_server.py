@@ -6,7 +6,19 @@ from http.server import BaseHTTPRequestHandler
 import re
 
 class TodoAPIHandler(BaseHTTPRequestHandler):
+    def add_cors_headers(self):
+        # Check if Origin header is present in the request
+        origin = self.headers.get('Origin')
+        if origin:
+            self.send_header('Access-Control-Allow-Origin', origin)
+        else:
+            # Fallback to localhost:3000 if no origin specified
+            self.send_header('Access-Control-Allow-Origin', 'http://localhost:3000')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
     def do_GET(self):
+        self.add_cors_headers()
         if self.path == '/' or self.path == '/':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -27,13 +39,14 @@ class TodoAPIHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
+        self.add_cors_headers()
+        content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
 
         # Parse the request body
         try:
             request_body = json.loads(post_data.decode('utf-8'))
-        except:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             request_body = {}
 
         if self.path.endswith('/auth/login'):
@@ -74,41 +87,29 @@ class TodoAPIHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         # Handle preflight requests for CORS
+        self.add_cors_headers()
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
 
-# Set up the server to handle CORS
-def enable_cors(self):
-    self.send_header('Access-Control-Allow-Origin', 'http://localhost:3000')
-    self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-    self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    def log_message(self, format, *args):
+        # Suppress logging to keep console clean
+        pass
 
-# Monkey patch to add CORS headers
-original_end_headers = BaseHTTPRequestHandler.end_headers
-def end_headers_with_cors(self):
-    if not self.headers.get('Origin'):
-        self.send_header('Access-Control-Allow-Origin', 'http://localhost:3000')
-    else:
-        self.send_header('Access-Control-Allow-Origin', self.headers.get('Origin'))
-    self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-    self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    original_end_headers(self)
+PORT = 8000
 
-BaseHTTPRequestHandler.end_headers = end_headers_with_cors
+if __name__ == "__main__":
+    print(f"Starting Todo API Mock Server at http://localhost:{PORT}")
+    print("Ready to handle requests for:")
+    print("- GET / (root)")
+    print("- POST /auth/login")
+    print("- POST /auth/refresh")
+    print("- POST /auth/check-email")
 
-PORT = 8003
-
-print(f"Starting Todo API Mock Server at http://localhost:{PORT}")
-print("Ready to handle requests for:")
-print("- GET / (root)")
-print("- POST /auth/login")
-print("- POST /auth/refresh")
-print("- POST /auth/check-email")
-
-with socketserver.TCPServer(("", PORT), TodoAPIHandler) as httpd:
-    print(f"Todo API Mock Server running at port {PORT}")
-    print("Press Ctrl+C to stop the server")
-    httpd.serve_forever()
+    with socketserver.TCPServer(("", PORT), TodoAPIHandler) as httpd:
+        print(f"Todo API Mock Server running at port {PORT}")
+        print("Press Ctrl+C to stop the server")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nShutting down the server...")
+            httpd.shutdown()

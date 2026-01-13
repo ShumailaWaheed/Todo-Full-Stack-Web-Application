@@ -2,6 +2,10 @@
 export interface User {
   id: string;
   email: string;
+  name?: string; // Optional name field
+  profile_image?: string; // Optional profile image URL
+  bio?: string; // Optional bio
+  location?: string; // Optional location
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
 }

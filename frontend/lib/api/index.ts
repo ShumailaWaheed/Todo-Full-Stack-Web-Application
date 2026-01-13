@@ -1,6 +1,6 @@
 // frontend/lib/api/index.ts
 import { Token, LoginRequest, RefreshTokenRequest, Task, TaskCreate, TaskUpdate, TaskToggleComplete, TaskListResponse } from '../types';
-import { Project, ProjectCreate } from '../types/project';
+import { Project, ProjectCreate, ProjectUpdate, ProjectToggleComplete } from '../types/project';
 
 // Analytics types
 export interface TaskCompletionTrend {
@@ -35,7 +35,7 @@ export interface TaskAnalyticsSummary {
   low_priority_pending: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083';
 
 class ApiService {
   private accessToken: string | null = null;
@@ -133,6 +133,13 @@ class ApiService {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
       return false;
+    }
+
+    // Handle mock refresh tokens
+    if (refreshToken.startsWith('mock_refresh_token_for_')) {
+      // For mock tokens, just return true to indicate the token is still valid
+      // In a real app, this would call the refresh endpoint
+      return true;
     }
 
     try {
@@ -244,8 +251,12 @@ class ApiService {
   }
 
   // Project methods
-  async getProjects(userId: string): Promise<Project[]> {
-    return this.request<Project[]>(`/api/${userId}/projects`, { method: 'GET' });
+  async getProjects(userId: string, completed?: boolean, limit: number = 50, offset: number = 0): Promise<Project[]> {
+    let url = `/api/${userId}/projects?limit=${limit}&offset=${offset}`;
+    if (completed !== undefined) {
+      url += `&completed=${completed}`;
+    }
+    return this.request<Project[]>(url, { method: 'GET' });
   }
 
   async getProject(userId: string, projectId: string): Promise<Project> {
@@ -259,7 +270,7 @@ class ApiService {
     });
   }
 
-  async updateProject(userId: string, projectId: string, projectData: Partial<ProjectCreate>): Promise<Project> {
+  async updateProject(userId: string, projectId: string, projectData: ProjectUpdate): Promise<Project> {
     return this.request<Project>(`/api/${userId}/projects/${projectId}`, {
       method: 'PUT',
       body: JSON.stringify(projectData),
@@ -269,6 +280,79 @@ class ApiService {
   async deleteProject(userId: string, projectId: string): Promise<void> {
     await this.request<void>(`/api/${userId}/projects/${projectId}`, { method: 'DELETE' });
   }
+
+  async toggleProjectCompletion(userId: string, projectId: string, completionData: ProjectToggleComplete): Promise<Project> {
+    return this.request<Project>(`/api/${userId}/projects/${projectId}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify(completionData),
+    });
+  }
+
+  // User profile methods
+  async getUserProfile(userId: string): Promise<User> {
+    return this.request<User>(`/api/${userId}/profile`, { method: 'GET' });
+  }
+
+  async updateUserProfile(userId: string, userData: Partial<User>): Promise<User> {
+    return this.request<User>(`/api/${userId}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async uploadProfileImage(userId: string, imageFile: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const accessToken = this.getAccessToken();
+    const headers: HeadersInit = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    // Don't use the request method as it expects JSON
+    const response = await fetch(`${API_BASE_URL}/api/${userId}/profile/image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Try to refresh the token
+        const refreshed = await this.refreshTokenIfNeeded();
+        if (refreshed) {
+          const newAccessToken = this.getAccessToken();
+          if (newAccessToken) {
+            headers['Authorization'] = `Bearer ${newAccessToken}`;
+          }
+          const retryResponse = await fetch(`${API_BASE_URL}/api/${userId}/profile/image`, {
+            method: 'POST',
+            headers,
+            body: formData,
+          });
+          if (!retryResponse.ok) {
+            throw new Error(`API request failed: ${retryResponse.statusText}`);
+          }
+          return retryResponse.json();
+        } else {
+          // Token refresh failed, clear tokens and redirect to login
+          this.clearTokens();
+          window.location.href = '/auth/sign-in';
+          throw new Error('Authentication required');
+        }
+      }
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  // Delete user account
+  async deleteUser(userId: string): Promise<void> {
+    await this.request<void>(`/api/${userId}/profile`, { method: 'DELETE' });
+  }
+
 }
 
 export const apiService = new ApiService();

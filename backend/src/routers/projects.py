@@ -11,22 +11,24 @@ from models.project import Project, ProjectCreate, ProjectUpdate, ProjectRead
 from schemas.project import ProjectResponse
 from middleware.auth import get_current_user
 
-router = APIRouter(prefix="/api/projects", tags=["projects"])
+router = APIRouter()
 
 
-@router.get("/{user_id}/", response_model=List[ProjectResponse])
+@router.get("/{user_id}/projects", response_model=List[ProjectResponse])
 async def get_projects(
-    user_id: UUID,
+    user_id: str,  # Changed from UUID to str to match user_id format
     completed: Optional[bool] = Query(None),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
+    # Verify that the user_id in the URL matches the authenticated user
     if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access these projects"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
     query = select(Project).where(Project.user_id == user_id)
@@ -39,44 +41,58 @@ async def get_projects(
     return projects
 
 
-@router.get("/{user_id}/{project_id}", response_model=ProjectResponse)
+@router.get("/{user_id}/projects/{project_id}", response_model=ProjectResponse)
 async def get_project(
-    user_id: UUID,
-    project_id: UUID,
+    user_id: str,  # Changed from UUID to str to match user_id format
+    project_id: str,  # Changed from UUID to str to match frontend expectations
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
+    # Verify that the user_id in the URL matches the authenticated user
     if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
-    project = session.get(Project, project_id)
+    # Try to convert project_id to int for database query (assuming it's an integer ID)
+    try:
+        proj_id = int(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+
+    project = session.get(Project, proj_id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     if project.user_id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
     return project
 
 
-@router.post("/{user_id}/", response_model=ProjectResponse)
+@router.post("/{user_id}/projects", response_model=ProjectResponse)
 async def create_project(
-    user_id: UUID,
+    user_id: str,  # Changed from UUID to str to match user_id format
     project_data: ProjectCreate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
+    # Verify that the user_id in the URL matches the authenticated user
     if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to create projects for this user"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
     # Validate project data
@@ -142,30 +158,42 @@ async def create_project(
     return project
 
 
-@router.put("/{user_id}/{project_id}", response_model=ProjectResponse)
+@router.put("/{user_id}/projects/{project_id}", response_model=ProjectResponse)
 async def update_project(
-    user_id: UUID,
-    project_id: UUID,
+    user_id: str,  # Changed from UUID to str to match user_id format
+    project_id: str,  # Changed from UUID to str to match frontend expectations
     project_data: ProjectUpdate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
+    # Verify that the user_id in the URL matches the authenticated user
     if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
-    project = session.get(Project, project_id)
+    # Try to convert project_id to int for database query (assuming it's an integer ID)
+    try:
+        proj_id = int(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+
+    project = session.get(Project, proj_id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     if project.user_id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
     # Validate project data
@@ -197,29 +225,41 @@ async def update_project(
     return project
 
 
-@router.delete("/{user_id}/{project_id}")
+@router.delete("/{user_id}/projects/{project_id}")
 async def delete_project(
-    user_id: UUID,
-    project_id: UUID,
+    user_id: str,  # Changed from UUID to str to match user_id format
+    project_id: str,  # Changed from UUID to str to match frontend expectations
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
+    # Verify that the user_id in the URL matches the authenticated user
     if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
-    project = session.get(Project, project_id)
+    # Try to convert project_id to int for database query (assuming it's an integer ID)
+    try:
+        proj_id = int(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+
+    project = session.get(Project, proj_id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     if project.user_id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
     session.delete(project)
@@ -227,30 +267,42 @@ async def delete_project(
     return {"message": "Project deleted successfully"}
 
 
-@router.patch("/{user_id}/{project_id}/complete", response_model=ProjectResponse)
+@router.patch("/{user_id}/projects/{project_id}/complete", response_model=ProjectResponse)
 async def toggle_project_completion(
-    user_id: UUID,
-    project_id: UUID,
+    user_id: str,  # Changed from UUID to str to match user_id format
+    project_id: str,  # Changed from UUID to str to match frontend expectations
     completion_data: dict,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
+    # Verify that the user_id in the URL matches the authenticated user
     if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
-    project = session.get(Project, project_id)
+    # Try to convert project_id to int for database query (assuming it's an integer ID)
+    try:
+        proj_id = int(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID format"
+        )
+
+    project = session.get(Project, proj_id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     if project.user_id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this project"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
         )
 
     completed = completion_data.get("completed")

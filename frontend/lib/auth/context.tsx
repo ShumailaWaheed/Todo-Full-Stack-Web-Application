@@ -40,6 +40,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<Token>;
   logout: () => void;
   checkAuthStatus: () => void;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,16 +57,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check authentication status on initial load
   useEffect(() => {
-    checkAuthStatus();
+    const initializeAuth = async () => {
+      await checkAuthStatus();
+    };
+    initializeAuth();
   }, []);
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     const accessToken = apiService.getAccessToken();
     if (accessToken) {
       // In a real app, we would validate the token with the backend
       // For now, we'll just set the authenticated state based on token presence
       setToken(accessToken);
-      setIsAuthenticated(true);
 
       // Decode the token to get user info
       const tokenPayload = decodeToken(accessToken);
@@ -73,13 +76,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userId = tokenPayload.sub;
         const email = tokenPayload.email;
 
-        // Set user info from token
-        setUser({
-          id: userId,
-          email: email || 'unknown@example.com',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+        try {
+          // Fetch complete user profile from the API
+          const userProfile = await apiService.getUserProfile(userId);
+          setUser(userProfile);
+          setIsAuthenticated(true);
+        } catch (profileError) {
+          console.warn('Could not fetch user profile, using basic info from token:', profileError);
+          // Fallback to using basic info from token
+          setUser({
+            id: userId,
+            email: email || 'unknown@example.com',
+            name: email ? email.split('@')[0] : undefined,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          setIsAuthenticated(true);
+        }
+      } else {
+        // Handle mock tokens from mock API server
+        // Extract user info from the mock token format: "mock_access_token_for_USER_ID"
+        if (accessToken.startsWith('mock_access_token_for_')) {
+          const userId = accessToken.replace('mock_access_token_for_', '');
+          try {
+            // Try to fetch complete user profile from the API
+            const userProfile = await apiService.getUserProfile(userId);
+            setUser(userProfile);
+            setIsAuthenticated(true);
+          } catch (profileError) {
+            console.warn('Could not fetch user profile for mock token, using basic info:', profileError);
+            // Fallback for mock tokens
+            setUser({
+              id: userId,
+              email: 'mock@example.com',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            setIsAuthenticated(true);
+          }
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       }
     } else {
       setIsAuthenticated(false);
@@ -99,17 +137,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Decode the JWT token to get the user ID
       const tokenPayload = decodeToken(tokens.access_token);
-      const userId = tokenPayload?.sub || 'unknown';
+      let userId = 'unknown';
 
-      // After successful login, fetch user details
-      // Note: In this demo, we don't have an endpoint to fetch user by token
-      // so we'll create a minimal user object based on the login response
-      setUser({
-        id: userId,
-        email,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+      if (tokenPayload) {
+        userId = tokenPayload.sub || 'unknown';
+      } else if (tokens.access_token.startsWith('mock_access_token_for_')) {
+        // Handle mock tokens from mock API server
+        userId = tokens.access_token.replace('mock_access_token_for_', '');
+      }
+
+      // After successful login, fetch complete user details from the API
+      try {
+        const userProfile = await apiService.getUserProfile(userId);
+        setUser(userProfile);
+      } catch (profileError) {
+        console.warn('Could not fetch user profile, using basic info:', profileError);
+        // Fallback to creating a minimal user object based on the login response
+        setUser({
+          id: userId,
+          email,
+          name: email.split('@')[0],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
 
       setToken(tokens.access_token);
       setIsAuthenticated(true);
@@ -130,6 +181,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      setUser({
+        ...user,
+        ...userData
+      });
+    }
+  };
+
   const value = {
     user,
     token,
@@ -137,7 +197,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     login,
     logout,
-    checkAuthStatus
+    checkAuthStatus,
+    updateUser
   };
 
   return (

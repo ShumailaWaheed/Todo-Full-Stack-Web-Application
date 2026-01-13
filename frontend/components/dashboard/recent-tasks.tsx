@@ -46,7 +46,7 @@ const RecentTasks: React.FC = () => {
           <div className="w-8 h-8 rounded-lg bg-[#3b82f6]/10 flex items-center justify-center text-[#3b82f6]">
             <FaLayerGroup className="text-xs" />
           </div>
-          <h3 className="text-sm font-black text-white/80 uppercase tracking-widest">Neural Logs</h3>
+          <h3 className="text-sm font-black text-white/80 uppercase tracking-widest">Recent Activity</h3>
         </div>
         <button onClick={() => router.push('/dashboard/tasks')} className="text-[10px] font-bold text-[#8b5cf6] hover:text-white transition-colors uppercase tracking-widest flex items-center gap-1">
           Root <FaChevronRight className="text-[8px]" />

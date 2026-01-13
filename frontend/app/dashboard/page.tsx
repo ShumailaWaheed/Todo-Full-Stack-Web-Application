@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { apiService } from '../../lib/api';
 import { Task } from '../../lib/types/task';
+import { useToast } from '../../components/ui/toast';
 import {
   FaFire,
   FaCheck,
@@ -20,11 +21,11 @@ import AddTaskSection from '../../components/dashboard/add-task-section';
 import TaskInsightsCharts from '../../components/dashboard/task-insights-charts';
 import TodaysFocus from '../../components/dashboard/todays-focus';
 import RecentTasks from '../../components/dashboard/recent-tasks';
-import ActiveProjects from '../../components/dashboard/active-projects';
 import ActivityHeatmap from '../../components/dashboard/activity-heatmap';
 
 const DashboardPage: React.FC = () => {
   const { user, loading } = useAuth();
+  const { addToast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [greeting, setGreeting] = useState('');
@@ -37,6 +38,11 @@ const DashboardPage: React.FC = () => {
       setTasks(response.tasks || []);
     } catch (error) {
       console.error('Data Sync Error:', error);
+      addToast({
+        type: 'error',
+        title: 'Sync Failed',
+        message: 'Could not retrieve dashboard data. Please try again.'
+      });
     } finally {
       setLoadingData(false);
     }
@@ -65,7 +71,7 @@ const DashboardPage: React.FC = () => {
     { label: 'ACTIVE', value: activeTasks.length, icon: FaClock, color: '#3b82f6' },
     { label: 'COMPLETED', value: completedTasks.length, icon: FaCheck, color: '#10b981' },
     { label: 'PENDING', value: activeTasks.length, icon: FaFolder, color: '#8b5cf6' },
-    { label: 'STREAK', value: '07', icon: FaFire, color: HighScoreColor(productivityScore) },
+    { label: 'PRODUCTIVITY', value: productivityScore, icon: FaFire, color: HighScoreColor(productivityScore) },
   ];
 
   if (loading) return (
@@ -91,15 +97,15 @@ const DashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse shadow-[0_0_10px_#8b5cf6]"></div>
-            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Neural Interface Online</span>
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">TASK MANAGER READY</span>
           </div>
           <h1 className="text-3xl lg:text-5xl font-black text-white tracking-tighter">
             TIME TO <span className="text-[#8b5cf6]">{dynamicGreeting.toUpperCase()}</span>, {userName().toUpperCase()}
           </h1>
           <p className="text-sm text-white/30 mt-2 font-medium max-w-xl leading-relaxed">
             {productivityScore > 70
-              ? `Exceptional performance detected. You have neutralized ${completedTasks.length} objectives today.`
-              : `System ready. ${activeTasks.length} objectives are awaiting your immediate intervention.`}
+              ? `Excellent performance! You have completed ${completedTasks.length} tasks today.`
+              : `Ready to work. ${activeTasks.length} tasks are waiting for your attention.`}
           </p>
         </div>
 
@@ -146,7 +152,6 @@ const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Primary (Automation & Capture) */}
         <div className="lg:col-span-7 space-y-8">
-           <ActiveProjects />
            <AddTaskSection />
 
            {/* Real Performance Index */}
@@ -163,7 +168,7 @@ const DashboardPage: React.FC = () => {
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-6">
                   <FaBolt className="text-[#8b5cf6] text-xs" />
-                  <span className="text-[10px] font-black text-[#8b5cf6] uppercase tracking-[0.4rem]">Efficiency Metrics</span>
+                  <span className="text-[10px] font-black text-[#8b5cf6] uppercase tracking-[0.4rem]">Productivity Score</span>
                 </div>
 
                 <div className="flex items-baseline gap-3 mb-6">
@@ -180,8 +185,8 @@ const DashboardPage: React.FC = () => {
 
                 <p className="text-sm text-white/40 leading-relaxed font-medium">
                   {productivityScore > 50
-                    ? "System is operating at peak capacity. Synchronization with global objectives is optimal."
-                    : "Low velocity detected. Recommend immediate execution of high-priority objectives to restore balance."}
+                    ? "Your productivity is high. Keep up the great work!"
+                    : "Consider focusing on high-priority tasks to boost your productivity."}
                 </p>
               </div>
            </div>
@@ -202,8 +207,8 @@ const DashboardPage: React.FC = () => {
   );
 
   function userName(): string {
-    if (!user?.email) return 'User';
-    return user.email.split('@')[0].slice(0, 12);
+    if (!user) return 'Loading...';
+    return user.name || user.email.split('@')[0];
   }
 
   function HighScoreColor(score: number) {

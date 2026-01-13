@@ -25,30 +25,30 @@ interface AddTaskSectionProps {
 const guideSteps = [
   {
     id: 1,
-    title: 'Initialize Objective',
-    description: 'Tap [+] to activate the high-precision creation engine.',
-    proTip: 'Use descriptive verbs like [DEPLOY] or [NEUTRALIZE] for better psychological flow.',
+    title: 'Task Title',
+    description: 'Enter a clear and descriptive title for your task.',
+    proTip: 'Use action words like "Prepare," "Complete," or "Review" for better clarity.',
     icon: <FaEdit className="w-5 h-5" />
   },
   {
     id: 2,
-    title: 'Sector Assignment',
-    description: 'Link your objective to a Project Vault for unified tracking.',
-    proTip: 'Assigning a project auto-calculates operational stability in your dashboard hub.',
+    title: 'Task Details',
+    description: 'Add a description if more details are needed.',
+    proTip: 'Include specific information to help remember what needs to be done.',
     icon: <FaShieldHalved className="w-5 h-5" />
   },
   {
     id: 3,
-    title: 'Priority Vector',
-    description: 'Designate High, Medium, or Low risk levels.',
-    proTip: 'Focus 80% of your energy on High-Risk tasks to maximize Neural Efficiency.',
+    title: 'Priority Level',
+    description: 'Set priority as High, Medium, or Low importance.',
+    proTip: 'Focus on High priority tasks first to maximize productivity.',
     icon: <FaBolt className="w-5 h-5" />
   },
   {
     id: 4,
-    title: 'Finalize & Sync',
-    description: 'Verify your parameters and synchronize to the global grid.',
-    proTip: 'Complete tasks daily to maintain your system streak and light up your heatmap.',
+    title: 'Complete Task',
+    description: 'Review your task details and save it to your list.',
+    proTip: 'Check off completed tasks daily to maintain progress and momentum.',
     icon: <FaMicrochip className="w-5 h-5" />
   },
 ];
@@ -95,7 +95,7 @@ const AddTaskSection: React.FC<AddTaskSectionProps> = ({ className = '' }) => {
           <div className="w-10 h-10 rounded-xl bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 flex items-center justify-center">
             <FaPlus className="w-4 h-4 text-[#8b5cf6]" />
           </div>
-          <h3 className="text-lg font-bold text-white tracking-tight">Quick Actions</h3>
+          <h3 className="text-lg font-bold text-white tracking-tight">Add New Task</h3>
         </div>
 
         <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 gap-1">
@@ -138,8 +138,8 @@ const AddTaskSection: React.FC<AddTaskSectionProps> = ({ className = '' }) => {
             </div>
           </div>
 
-          <h4 className="text-xl font-black text-white tracking-tight mb-2 uppercase group-hover:text-[#8b5cf6] transition-colors">Start New Task</h4>
-          <p className="text-sm text-white/40 group-hover:text-white/70 transition-colors">Invoke the creation engine to organize your next objective.</p>
+          <h4 className="text-xl font-black text-white tracking-tight mb-2 uppercase group-hover:text-[#8b5cf6] transition-colors">Create New Task</h4>
+          <p className="text-sm text-white/40 group-hover:text-white/70 transition-colors">Add a new task to your to-do list.</p>
         </div>
       ) : (
         <div className="border border-white/10 bg-white/[0.02] p-8 rounded-2xl">

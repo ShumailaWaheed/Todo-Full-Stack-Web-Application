@@ -62,6 +62,7 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
 
 # Python specific
 *.pyc
@@ -186,3 +187,4 @@ instance/
 .webassets-cache
 celerybeat-schedule
 celerybeat.pid
+

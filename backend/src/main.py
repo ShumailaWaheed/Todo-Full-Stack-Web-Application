@@ -14,7 +14,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],  # Allow frontend origins
+    allow_origins=["*"],  # Allow all origins for Hugging Face Spaces deployment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,6 +23,10 @@ app.add_middleware(
 # Include routers
 app.include_router(tasks.router, prefix="/api/{user_id}", tags=["tasks"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+
+# Include projects router (now follows correct pattern)
+from routers import projects
+app.include_router(projects.router, prefix="/api/{user_id}", tags=["projects"])
 
 @app.on_event("startup")
 async def startup_event():

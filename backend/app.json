@@ -1,0 +1,6 @@
+{
+  "name": "Todo API Backend",
+  "description": "A FastAPI backend for managing todos with user authentication",
+  "repository": "https://github.com/your-username/your-repo-name",
+  "keywords": ["fastapi", "todo", "api", "python"]
+}

@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TaskCreate, TaskUpdate } from '../../lib/types';
+import { useToast } from '../../components/ui/toast';
 import {
   FaTimes,
   FaCheck,
@@ -29,6 +30,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   onCancel,
   loading = false
 }) => {
+  const { addToast } = useToast();
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [dueDate, setDueDate] = useState(initialData?.due_date || '');
@@ -36,6 +38,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [charCount, setCharCount] = useState(0);
+  const [readyToSubmit, setReadyToSubmit] = useState(false);
 
   useEffect(() => {
     setCharCount(title.length);
@@ -43,17 +46,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   const validateForm = () => {
     if (!title.trim()) {
-      setError('Operation identifier required');
+      setError('Task title is required. Please enter a title for your task.');
       return false;
     }
 
     if (title.length > 200) {
-      setError('Identifier exceeds 200 character limit');
+      setError('Task title exceeds the maximum length of 200 characters. Please shorten your title.');
       return false;
     }
 
     if (description && description.length > 2000) {
-      setError('Brief exceeds 2000 character limit');
+      setError('Task description exceeds the maximum length of 2000 characters. Please shorten your description.');
       return false;
     }
 
@@ -64,7 +67,15 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Only allow submission when explicitly triggered by submit button click
+    if (!readyToSubmit) {
+      console.log("Form submission blocked - not ready to submit");
+      return;
+    }
+
     if (!validateForm()) {
+      // Reset the ready flag if validation fails
+      setReadyToSubmit(false);
       return;
     }
 
@@ -75,23 +86,58 @@ const TaskForm: React.FC<TaskFormProps> = ({
       priority
     };
 
-    if (isEditing) {
-      const updateData: TaskUpdate = {};
-      if (title !== (initialData?.title || '')) updateData.title = title.trim();
-      if (description !== (initialData?.description || '')) updateData.description = description.trim() || undefined;
-      if (dueDate !== (initialData?.due_date || '')) updateData.due_date = dueDate;
-      if (priority !== (initialData?.priority || 'medium')) updateData.priority = priority;
+    // Call onSubmit with a wrapper that handles success notifications
+    const submitPromise = onSubmit(taskData);
 
-      onSubmit(updateData);
+    if (submitPromise instanceof Promise) {
+      submitPromise
+        .then(() => {
+          if (isEditing) {
+            addToast({
+              type: 'success',
+              title: 'Task Updated',
+              message: 'Your task has been successfully updated.'
+            });
+          } else {
+            addToast({
+              type: 'success',
+              title: 'Task Created',
+              message: 'Your task has been successfully created.'
+            });
+          }
+        })
+        .catch((error) => {
+          addToast({
+            type: 'error',
+            title: 'Operation Failed',
+            message: isEditing ? 'Failed to update task. Please try again.' : 'Failed to create task. Please try again.'
+          });
+        });
     } else {
-      onSubmit(taskData);
+      // If it's not a promise, handle the synchronous case
+      if (isEditing) {
+        addToast({
+          type: 'success',
+          title: 'Task Updated',
+          message: 'Your task has been successfully updated.'
+        });
+      } else {
+        addToast({
+          type: 'success',
+          title: 'Task Created',
+          message: 'Your task has been successfully created.'
+        });
+      }
     }
+
+    // Reset the ready flag after submission
+    setReadyToSubmit(false);
   };
 
   const priorityOptions = [
-    { value: 'low', label: 'Standard', color: 'text-[#10b981]', bg: 'bg-[#10b981]/10 border-[#10b981]/20' },
-    { value: 'medium', label: 'Elevated', color: 'text-[#f59e0b]', bg: 'bg-[#f59e0b]/10 border-[#f59e0b]/20' },
-    { value: 'high', label: 'Critical', color: 'text-[#ef4444]', bg: 'bg-[#ef4444]/10 border-[#ef4444]/20' }
+    { value: 'low', label: 'Low', color: 'text-[#10b981]', bg: 'bg-[#10b981]/10 border-[#10b981]/20' },
+    { value: 'medium', label: 'Medium', color: 'text-[#f59e0b]', bg: 'bg-[#f59e0b]/10 border-[#f59e0b]/20' },
+    { value: 'high', label: 'High', color: 'text-[#ef4444]', bg: 'bg-[#ef4444]/10 border-[#ef4444]/20' }
   ];
 
   return (
@@ -120,15 +166,27 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <div className="space-y-2">
             <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
               <FaBolt className="text-[#8b5cf6] text-[10px]" />
-              Operation Identifier
+              Task Title
             </label>
             <input
               type="text"
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                // Clear error when user starts typing
+                if (error && e.target.value.trim()) {
+                  setError(null);
+                }
+              }}
+              onKeyDown={(e) => {
+                // Prevent form submission when Enter is pressed in the title field
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
               className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-bold text-white placeholder:text-white/10 focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none"
-              placeholder="DEFINE OBJECTIVE NAME"
+              placeholder="ENTER TASK TITLE"
               maxLength={200}
               autoFocus
             />
@@ -147,15 +205,27 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <div className="space-y-2">
             <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
               <FaAlignLeft className="text-[#8b5cf6] text-[10px]" />
-              Mission Brief
+              Description
             </label>
             <textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                // Clear error when user starts typing (if it was related to description length)
+                if (error && e.target.value.length <= 2000) {
+                  setError(null);
+                }
+              }}
+              onKeyDown={(e) => {
+                // Prevent form submission when Enter is pressed in the description field
+                if (e.key === 'Enter' && !e.shiftKey) { // Allow Shift+Enter for new lines
+                  e.preventDefault();
+                }
+              }}
               rows={3}
               className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-medium text-white placeholder:text-white/10 focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none resize-none"
-              placeholder="Define operational parameters and objectives..."
+              placeholder="Describe your task in more detail..."
             />
           </div>
         </div>
@@ -167,17 +237,29 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <div className="space-y-2">
             <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
               <FaCalendar className="text-[#8b5cf6] text-[10px]" />
-              Execution Deadline
+              Due Date
             </label>
             <input
               type="date"
               id="dueDate"
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(e) => {
+                setDueDate(e.target.value);
+                // Clear error when user makes a change
+                if (error) {
+                  setError(null);
+                }
+              }}
+              onKeyDown={(e) => {
+                // Prevent form submission when Enter is pressed in the date field
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
               className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-bold text-white focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none"
             />
             <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest ml-1">
-              Set timeline for objective completion
+              Set deadline for task completion
             </p>
           </div>
         </div>
@@ -188,7 +270,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
           <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
             <FaFlag className="text-[#8b5cf6] text-[10px]" />
-            Risk Assessment Level
+            Priority Level
           </label>
           <div className="grid grid-cols-3 gap-4">
             {priorityOptions.map((opt) => (
@@ -212,18 +294,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
           {/* Summary */}
           <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
-            <h4 className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-3">Mission Parameters</h4>
+            <h4 className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-3">Task Summary</h4>
             <div className="space-y-2 text-[10px]">
               <div className="flex justify-between">
-                <span className="text-white/40">Objective:</span>
+                <span className="text-white/40">Task:</span>
                 <span className="text-white font-medium truncate max-w-[200px]">{title || 'Untitled'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white/40">Deadline:</span>
+                <span className="text-white/40">Due:</span>
                 <span className="text-white font-medium">{dueDate || 'Not set'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white/40">Risk Level:</span>
+                <span className="text-white/40">Priority:</span>
                 <span className={`font-bold uppercase ${
                   priority === 'high' ? 'text-[#ef4444]' :
                   priority === 'medium' ? 'text-[#f59e0b]' : 'text-[#10b981]'
@@ -253,7 +335,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
         {step < 3 ? (
           <button
             type="button"
-            onClick={() => setStep(step + 1)}
+            onClick={() => {
+              // Validate current step before proceeding
+              if (step === 1 && !title.trim()) {
+                setError('Task title is required. Please enter a title for your task.');
+                return;
+              }
+              setStep(step + 1);
+            }}
             disabled={step === 1 && !title.trim()}
             className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 text-[#8b5cf6] text-[9px] font-black uppercase tracking-widest hover:bg-[#8b5cf6]/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
@@ -263,13 +352,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <button
             type="submit"
             disabled={loading}
+            onClick={() => setReadyToSubmit(true)}
             className="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#8b5cf6]/80 text-white text-[9px] font-black uppercase tracking-widest hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] transition-all disabled:opacity-50"
           >
             {loading ? (
               <FaSpinner className="text-sm animate-spin" />
             ) : (
               <>
-                {isEditing ? 'Update Mission' : 'Initialize Operation'} <FaCheck className="text-[10px]" />
+                {isEditing ? 'Update Task' : 'Create Task'} <FaCheck className="text-[10px]" />
               </>
             )}
           </button>

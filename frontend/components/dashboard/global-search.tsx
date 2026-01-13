@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FaMagnifyingGlass as FaSearch,
   FaTerminal,
@@ -15,6 +16,7 @@ import { Project } from '../../lib/types/project';
 
 const GlobalSearch: React.FC = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ tasks: Task[], projects: Project[] }>({ tasks: [], projects: [] });
   const [isFocused, setIsFocused] = useState(false);
@@ -116,7 +118,11 @@ const GlobalSearch: React.FC = () => {
                 <h5 className="text-[8px] font-black text-[#10b981] uppercase tracking-[0.4em] mb-3 px-2">Neutralized_Targets</h5>
                 <div className="space-y-1">
                   {results.tasks.map(t => (
-                    <div key={t.id} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors cursor-pointer group">
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors cursor-pointer group"
+                      onClick={() => router.push(`/dashboard/tasks/${t.id}`)}
+                    >
                       <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/40">
                         <FaTerminal className="text-[10px]" />
                       </div>

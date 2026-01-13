@@ -3,27 +3,140 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+  --gradient-primary-start: 139 92 246; /* #8b5cf6 - purple-500 */
+  --gradient-primary-end: 236 72 153;   /* #ec4899 - pink-500 */
+  --gradient-secondary-start: 59 130 246; /* #3b82f6 - blue-500 */
+  --gradient-secondary-end: 14 165 233;   /* #0ea5e9 - sky-500 */
+  --gradient-tertiary-start: 16 185 129;  /* #10b981 - emerald-500 */
+  --gradient-tertiary-end: 34 197 94;     /* #22c55e - green-500 */
+  --dark-bg-primary: 10 10 15;           /* #0a0a0f */
+  --dark-bg-secondary: 5 5 8;            /* #050508 */
+  --glass-bg: 0 0 0 / 0.8;               /* rgba(0,0,0,0.8) */
+  --glass-border: 255 255 255 / 0.1;     /* rgba(255,255,255,0.1) */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: rgb(var(--foreground));
   background: linear-gradient(
       to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
+      rgb(var(--dark-bg-secondary)),
+      rgb(var(--dark-bg-primary))
     )
-    rgb(var(--background-start-rgb));
+    rgb(var(--dark-bg-primary));
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Professional glassmorphism utility classes */
+.bg-glass {
+  background: rgba(var(--glass-bg));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(var(--glass-border));
+}
+
+/* Gradient utility classes */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, rgb(var(--gradient-primary-start)), rgb(var(--gradient-primary-end)));
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, rgb(var(--gradient-secondary-start)), rgb(var(--gradient-secondary-end)));
+}
+
+.bg-gradient-tertiary {
+  background: linear-gradient(135deg, rgb(var(--gradient-tertiary-start)), rgb(var(--gradient-tertiary-end)));
+}
+
+/* Professional text gradients */
+.text-gradient-primary {
+  background: linear-gradient(90deg, rgb(var(--gradient-primary-start)), rgb(var(--gradient-primary-end)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-secondary {
+  background: linear-gradient(90deg, rgb(var(--gradient-secondary-start)), rgb(var(--gradient-secondary-end)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Enhanced shadow effects */
+.shadow-glass {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1),
+              0 0 20px rgba(var(--gradient-primary-start), 0.15);
+}
+
+/* Smooth transitions */
+.transition-professional {
+  transition: all 300ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+/* Professional hover effects */
+.hover-lift {
+  transition: transform 300ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.hover-scale {
+  transition: transform 300ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Focus styles for accessibility */
+.focus-ring {
+  outline: 2px solid rgb(var(--ring));
+  outline-offset: 2px;
 }
 
 @layer utilities {

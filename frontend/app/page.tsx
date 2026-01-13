@@ -1,20 +1,25 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/auth/context';
 import HomeContent from '../components/home/home';
 
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // If authenticated, redirect to dashboard
+  // Check if we should stay on home page even if authenticated (e.g., when coming from dashboard logo)
+  const stayOnHome = searchParams?.get('stayOnHome') === 'true';
+
+  // If authenticated, redirect to dashboard (unless explicitly staying on home)
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !stayOnHome) {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, stayOnHome]);
 
   // Show loading state while checking auth status
   if (loading) {

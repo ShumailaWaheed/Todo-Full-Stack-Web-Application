@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import ProjectForm from '../../../../components/projects/project-form';
 import { apiService } from '../../../../lib/api';
 import { useAuth } from '../../../../lib/auth/context';
+import { useToast } from '../../../../components/ui/toast';
 import { ProjectCreate, ProjectUpdate } from '../../../../lib/types';
 
 const CreateProjectPage: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const handleCreateProject = async (projectData: ProjectCreate | ProjectUpdate) => {
     if (!user) return;
@@ -21,8 +22,12 @@ const CreateProjectPage: React.FC = () => {
 
     try {
       await apiService.createProject(user.id, dataToCreate);
-      // Set success message
-      setSuccessMessage('Project created successfully!');
+
+      addToast({
+        type: 'success',
+        title: 'Project Created',
+        message: 'The project has been successfully created.'
+      });
 
       // Redirect back to dashboard after successful creation
       // The dashboard will automatically refresh data when page becomes visible
@@ -31,16 +36,11 @@ const CreateProjectPage: React.FC = () => {
       }, 1500); // Wait 1.5 seconds to show the success message
     } catch (err) {
       console.error('Failed to create project:', err);
-      // Show user-friendly error message based on error type
-      if (err instanceof Error) {
-        if (err.message.includes('Network error')) {
-          alert('Unable to create project. Please check your network connection and try again.');
-        } else {
-          alert(`Failed to create project: ${err.message}`);
-        }
-      } else {
-        alert('Unable to create project. Please try again.');
-      }
+      addToast({
+        type: 'error',
+        title: 'Creation Failed',
+        message: 'Could not create the project. Please try again.'
+      });
     }
   };
 
@@ -71,14 +71,6 @@ const CreateProjectPage: React.FC = () => {
             </p>
           </div>
           <div className="mt-5 md:col-span-2 md:mt-0">
-            {successMessage && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-green-500/20 to-green-600/20 text-green-300 rounded-lg border border-green-500/30 flex items-center shadow-lg shadow-green-500/10">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                {successMessage}
-              </div>
-            )}
             <ProjectForm
               onSubmit={handleCreateProject}
               onCancel={handleCancel}

@@ -4,12 +4,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { useRouter } from 'next/navigation';
-import { FaTasks, FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa';
+import { FaTasks, FaGithub, FaLinkedin, FaTwitter, FaBars, FaTimes } from 'react-icons/fa';
 
 const HomeHeader: React.FC = () => {
   const { user } = useAuth();
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,13 +22,20 @@ const HomeHeader: React.FC = () => {
 
   const handleGetStarted = () => {
     router.push('/auth/sign-up');
+    setMobileMenuOpen(false);
   };
 
-  const handleLearnMore = () => {
-    const featuresSection = document.getElementById('features');
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: 'smooth' });
+  const handleGoToDashboard = () => {
+    router.push('/dashboard');
+    setMobileMenuOpen(false);
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
     }
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -50,29 +58,100 @@ const HomeHeader: React.FC = () => {
             </span>
           </div>
 
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {!user ? (
               <>
-                <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">Features</a>
-                <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm">How It Works</a>
+                <button
+                  onClick={() => scrollToSection('features')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => scrollToSection('how-it-works')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+                >
+                  How It Works
+                </button>
                 <button
                   onClick={handleGetStarted}
-                  className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-purple-500/25"
+                  className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
                 >
                   Get Started
                 </button>
               </>
             ) : (
               <button
-                onClick={() => router.push('/dashboard')}
-                className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-purple-500/25"
+                onClick={handleGoToDashboard}
+                className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
               >
                 Go to Dashboard
               </button>
             )}
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden text-white z-50"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      <div
+        className={`fixed inset-0 bg-black/90 backdrop-blur-xl z-40 transition-all duration-300 ease-in-out md:hidden ${
+          mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+      >
+        <div className="flex flex-col h-full pt-20 px-6">
+          <div className="space-y-6">
+            {!user ? (
+              <>
+                <button
+                  onClick={() => scrollToSection('features')}
+                  className="block w-full text-left py-3 text-white text-lg font-medium hover:text-purple-400 transition-colors"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => scrollToSection('how-it-works')}
+                  className="block w-full text-left py-3 text-white text-lg font-medium hover:text-purple-400 transition-colors"
+                >
+                  How It Works
+                </button>
+                <button
+                  onClick={handleGetStarted}
+                  className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-purple-500/25"
+                >
+                  Get Started
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleGoToDashboard}
+                className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-purple-500/25"
+              >
+                Go to Dashboard
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Menu Close Button */}
+          <button
+            className="absolute top-6 right-6 text-white"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <FaTimes className="text-2xl" />
+          </button>
+        </div>
+      </div>
+
       <style jsx>{`
         @keyframes gradient {
           0% { background-position: 0% 50%; }

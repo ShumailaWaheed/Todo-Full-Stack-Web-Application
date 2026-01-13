@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../lib/auth/context';
 import { apiService } from '../../../lib/api';
 import { Task } from '../../../lib/types/task';
+import { useToast } from '../../../components/ui/toast';
 import {
   FaChartLine,
   FaBolt,
@@ -18,6 +19,7 @@ import TaskInsightsCharts from '../../../components/dashboard/task-insights-char
 
 const IntelligencePage: React.FC = () => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,6 +32,11 @@ const IntelligencePage: React.FC = () => {
         setTasks(res.tasks || []);
       } catch (err) {
         console.error('Intelligence Sync Error:', err);
+        addToast({
+          type: 'error',
+          title: 'Sync Failed',
+          message: 'Could not retrieve analytics data. Please try again.'
+        });
       } finally {
         setLoading(false);
       }

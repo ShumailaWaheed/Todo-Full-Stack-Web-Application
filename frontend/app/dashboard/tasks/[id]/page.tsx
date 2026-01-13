@@ -6,14 +6,17 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../lib/auth/context';
 import { apiService } from '../../../../lib/api';
 import { Task } from '../../../../lib/types';
+import { useToast } from '../../../../components/ui/toast';
 import TaskDetail from '../../../../components/tasks/task-detail';
 import TaskEditForm from '../../../../components/tasks/task-edit-form';
+import ConfirmationDialog from '../../../../components/common/confirmation-dialog';
 
 const TaskDetailPageContent: React.FC = () => {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -37,12 +40,12 @@ const TaskDetailPageContent: React.FC = () => {
       setTask(fetchedTask);
     } catch (err) {
       console.error('Failed to load task:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to load task. It may not exist or you may not have permission to view it.');
-      }
+      addToast({
+        type: 'error',
+        title: 'Load Failed',
+        message: 'Could not retrieve task details. Please try again.'
+      });
+      setError('Failed to load task. It may not exist or you may not have permission to view it.');
     } finally {
       setLoading(false);
     }
@@ -55,14 +58,19 @@ const TaskDetailPageContent: React.FC = () => {
       const updatedTask = await apiService.updateTask(user.id, taskId, taskData);
       setTask(updatedTask);
       setEditing(false);
+
+      addToast({
+        type: 'success',
+        title: 'Task Updated',
+        message: 'The task has been successfully updated.'
+      });
     } catch (err) {
       console.error('Failed to update task:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to update task. Please try again.');
-      }
+      addToast({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Could not update the task. Please try again.'
+      });
     }
   };
 
@@ -74,32 +82,62 @@ const TaskDetailPageContent: React.FC = () => {
         completed: !taskToToggle.completed
       });
       setTask(updatedTask);
+
+      addToast({
+        type: 'success',
+        title: taskToToggle.completed ? 'Task Reactivated' : 'Task Completed',
+        message: taskToToggle.completed
+          ? 'The task has been marked as active again.'
+          : 'The task has been marked as completed successfully.'
+      });
     } catch (err) {
       console.error('Failed to toggle task completion:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to update task status. Please try again.');
-      }
+      addToast({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Could not update task status. Please try again.'
+      });
     }
   };
 
-  const handleDelete = async (taskToDelete: Task) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const initiateDelete = (taskToDelete: Task) => {
     if (!user) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!user || !task) return;
+
+    setIsDeleting(true);
+    setShowDeleteConfirm(false);
 
     try {
-      await apiService.deleteTask(user.id, taskToDelete.id);
+      await apiService.deleteTask(user.id, task.id);
+
+      addToast({
+        type: 'success',
+        title: 'Task Deleted',
+        message: 'The task has been successfully deleted.'
+      });
+
       router.push('/dashboard/tasks');
     } catch (err) {
       console.error('Failed to delete task:', err);
-      // Show user-friendly error message if it's a network error
-      if (err instanceof Error && err.message.includes('Network error')) {
-        setError('Unable to connect to the server. Please check your network connection and try again.');
-      } else {
-        setError('Failed to delete task. Please try again.');
-      }
+      addToast({
+        type: 'error',
+        title: 'Deletion Failed',
+        message: 'Could not delete the task. Please try again.'
+      });
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   const handleEdit = () => {
@@ -170,10 +208,21 @@ const TaskDetailPageContent: React.FC = () => {
           task={task}
           onToggleComplete={handleToggleComplete}
           onEdit={handleEdit}
-          onDelete={handleDelete}
+          onDelete={initiateDelete}
           onBack={handleBack}
         />
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        title="Confirm Deletion"
+        message="Are you sure you want to permanently delete this task? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        confirmText="Delete Task"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

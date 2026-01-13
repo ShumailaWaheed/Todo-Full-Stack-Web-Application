@@ -4,6 +4,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/context';
+import { FaInfinity } from 'react-icons/fa6';
 import Header from '../ui/header';
 import Footer from '../ui/footer';
 import Sidebar from './sidebar';
@@ -18,8 +19,9 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
 
   // Don't show header/footer on auth pages
   const isAuthPage = pathname?.startsWith('/auth');
-  // Don't show sidebar on auth pages
-  const showSidebar = user && !isAuthPage;
+  // Don't show sidebar on home page (marketing page) or auth pages
+  const isHomePage = pathname === '/' || pathname === '';
+  const showSidebar = !isAuthPage && !isHomePage;
 
   // Don't show header/sidebar on dashboard pages (they have their own)
   const isDashboardPage = pathname?.startsWith('/dashboard');
@@ -27,9 +29,17 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
   if (loading) {
     // Show loading state while checking auth status
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg text-gray-400">Loading...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="relative group cursor-pointer mb-4">
+            <div className="absolute -inset-3 bg-[#8b5cf6]/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#8b5cf6] to-[#ec4899] flex items-center justify-center shadow-2xl relative z-10 overflow-hidden">
+               <div className="absolute inset-0 bg-white/10 group-hover:translate-y-full transition-transform duration-500"></div>
+               <FaInfinity className="text-white w-8 h-8 animate-pulse" />
+            </div>
+          </div>
+          <div className="w-12 h-12 border-2 border-[#8b5cf6]/20 border-t-[#8b5cf6] rounded-full animate-spin mt-4"></div>
+          <p className="text-lg text-gray-400 mt-4">Loading...</p>
         </div>
       </div>
     );
@@ -43,6 +53,7 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
 
   return (
     <>
+      {showSidebar && !isDashboardPage && <Sidebar />}
       {!isAuthPage && <Header />}
       <main className={!isAuthPage ? "min-h-screen" : ""}>
         {children}

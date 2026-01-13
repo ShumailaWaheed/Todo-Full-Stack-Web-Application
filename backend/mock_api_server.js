@@ -269,6 +269,99 @@ app.get('/api/:userId/analytics/summary', (req, res) => {
   });
 });
 
+// User profile endpoints (before general task routes to avoid conflicts)
+app.get('/api/:userId/profile', (req, res) => {
+  const userId = req.params.userId;
+
+  // Find user in the users array or create a default one
+  let user = users.find(u => u.id === userId);
+  if (!user) {
+    user = {
+      id: userId,
+      email: `user${userId}@example.com`,
+      name: `User ${userId}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    users.push(user);
+  }
+
+  res.json(user);
+});
+
+app.put('/api/:userId/profile', (req, res) => {
+  const userId = req.params.userId;
+  const { email, name, bio, location } = req.body;
+
+  // Find user in the users array
+  let user = users.find(u => u.id === userId);
+  if (!user) {
+    // Create user if doesn't exist
+    user = {
+      id: userId,
+      email: email || `user${userId}@example.com`,
+      name: name || `User ${userId}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    users.push(user);
+  } else {
+    // Update existing user
+    user.email = email || user.email;
+    user.name = name || user.name;
+    user.bio = bio !== undefined ? bio : user.bio;
+    user.location = location !== undefined ? location : user.location;
+    user.updated_at = new Date().toISOString();
+  }
+
+  res.json(user);
+});
+
+app.post('/api/:userId/profile/image', (req, res) => {
+  const userId = req.params.userId;
+
+  // Find user in the users array
+  let user = users.find(u => u.id === userId);
+  if (!user) {
+    // Create user if doesn't exist
+    user = {
+      id: userId,
+      email: `user${userId}@example.com`,
+      name: `User ${userId}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    users.push(user);
+  }
+
+  // For mock purposes, we'll simulate image upload
+  // In a real app, we'd process the uploaded file
+  user.profile_image = `/api/${userId}/profile/image?timestamp=${Date.now()}`;
+  user.updated_at = new Date().toISOString();
+
+  res.json({
+    success: true,
+    profile_image: user.profile_image,
+    message: 'Profile image updated successfully'
+  });
+});
+
+// Delete user profile and associated data
+app.delete('/api/:userId/profile', (req, res) => {
+  const userId = req.params.userId;
+
+  // Remove user from users array
+  users = users.filter(u => u.id !== userId);
+
+  // Remove user's tasks
+  tasks = tasks.filter(t => t.user_id !== userId);
+
+  // Remove user's projects
+  projects = projects.filter(p => p.user_id !== userId);
+
+  res.status(204).send(); // No content
+});
+
 // Task endpoints (under /api/:userId/)
 app.get('/api/:userId/', (req, res) => {
   const userId = req.params.userId;
