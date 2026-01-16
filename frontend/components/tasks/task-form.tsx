@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { TaskCreate, TaskUpdate } from '../../lib/types';
 import { useToast } from '../../components/ui/toast';
 import {
-  FaTimes,
   FaCheck,
   FaArrowRight,
   FaSpinner,

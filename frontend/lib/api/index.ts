@@ -1,5 +1,5 @@
 // frontend/lib/api/index.ts
-import { Token, LoginRequest, RefreshTokenRequest, Task, TaskCreate, TaskUpdate, TaskToggleComplete, TaskListResponse } from '../types';
+import { Token, LoginRequest, RefreshTokenRequest, Task, TaskCreate, TaskUpdate, TaskToggleComplete, TaskListResponse, User } from '../types';
 import { Project, ProjectCreate, ProjectUpdate, ProjectToggleComplete } from '../types/project';
 
 // Analytics types
@@ -188,6 +188,13 @@ class ApiService {
 
   async logout(): Promise<void> {
     this.clearTokens();
+  }
+
+  async checkEmail(email: string): Promise<{ exists: boolean }> {
+    return this.request<{ exists: boolean }>('/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
   }
 
   // Task methods

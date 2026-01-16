@@ -314,7 +314,7 @@ export default function ChatPage() {
                 {messages.map((message, index) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     {message.role === 'assistant' && (

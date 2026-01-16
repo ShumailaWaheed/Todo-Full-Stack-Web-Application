@@ -12,32 +12,16 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     },
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      clientId: process.env.GITHUB_CLIENT_ID || '',
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
     },
-  },
-  account: {
-    accountModel: {
-      createAccountOnLogin: true,
-    }
   },
   session: {
     expiresIn: 7 * 24 * 60 * 60, // 7 days
-    rememberMeExpiresIn: 30 * 24 * 60 * 60, // 30 days
-  },
-  user: {
-    dataModel: {
-      fields: {
-        name: {
-          type: 'string',
-          required: true,
-        },
-      },
-    },
   },
   email: {
     enabled: true,

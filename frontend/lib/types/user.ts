@@ -6,6 +6,7 @@ export interface User {
   profile_image?: string; // Optional profile image URL
   bio?: string; // Optional bio
   location?: string; // Optional location
+  theme_preference?: string; // Optional theme preference
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
 }

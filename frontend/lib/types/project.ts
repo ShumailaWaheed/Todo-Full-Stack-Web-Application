@@ -10,6 +10,11 @@ export interface Project {
   completed: boolean;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
+  // Analytics/Computed fields
+  members?: number;
+  progress?: number;
+  tasks_completed?: number;
+  tasks_total?: number;
 }
 
 export interface ProjectCreate {

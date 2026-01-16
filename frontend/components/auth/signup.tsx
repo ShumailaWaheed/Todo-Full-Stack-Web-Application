@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { useRouter } from 'next/navigation';
+import { apiService } from '../../lib/api';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTimes, FaCheck, FaGoogle, FaGithub } from 'react-icons/fa';
 
 const Signup: React.FC = () => {
@@ -66,15 +67,7 @@ const Signup: React.FC = () => {
 
     try {
       // Make a request to check if user exists
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002'}/auth/check-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
+      const data = await apiService.checkEmail(email);
       setEmailExists(data.exists);
 
       if (data.exists) {

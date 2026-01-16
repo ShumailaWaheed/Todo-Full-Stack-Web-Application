@@ -14,17 +14,8 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:8083",
-        "http://127.0.0.1:8083",
-        "https://*.hf.space",  # Allow Hugging Face Spaces
-        "https://*.huggingface.app"  # Alternative Hugging Face domain
-    ],  # Allow frontend origins including Hugging Face
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for Vercel deployment
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
