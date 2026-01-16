@@ -43,21 +43,11 @@ const GlobalSearch: React.FC = () => {
       setLoading(true);
       try {
         const [taskRes, projRes] = await Promise.all([
-          apiService.getTasks(user.id),
-          apiService.getProjects(user.id)
+          apiService.getTasks(user.id, undefined, query, 5, 0), // Pass search query to API
+          apiService.getProjects(user.id, undefined, query, 3, 0) // Pass search query to API
         ]);
 
-        const filteredTasks = (taskRes.tasks || []).filter(t =>
-          t.title.toLowerCase().includes(query.toLowerCase()) ||
-          t.description?.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 5);
-
-        const filteredProjects = (Array.isArray(projRes) ? projRes : []).filter(p =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.description?.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 3);
-
-        setResults({ tasks: filteredTasks, projects: filteredProjects });
+        setResults({ tasks: taskRes.tasks || [], projects: Array.isArray(projRes) ? projRes : [] });
       } catch (err) {
         console.error('Search Sync Error:', err);
       } finally {
@@ -73,7 +63,7 @@ const GlobalSearch: React.FC = () => {
     <div ref={searchRef} className="relative z-50">
       <div className={`
         flex items-center gap-4 bg-white/[0.03] border transition-all duration-500 rounded-2xl px-5 py-2.5
-        ${isFocused ? 'border-[#8b5cf6]/50 bg-white/[0.06] w-84 shadow-[0_0_30px_rgba(139,92,246,0.1)]' : 'border-white/5 w-64'}
+        ${isFocused ? 'border-[#8b5cf6]/50 bg-white/[0.06] w-full max-w-md shadow-[0_0_30px_rgba(139,92,246,0.1)]' : 'border-white/5 w-64 max-w-xs'}
       `}>
         <FaSearch className={`text-xs transition-colors duration-500 ${isFocused ? 'text-[#8b5cf6]' : 'text-white/20'}`} />
         <input

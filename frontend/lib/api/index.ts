@@ -35,7 +35,7 @@ export interface TaskAnalyticsSummary {
   low_priority_pending: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 class ApiService {
   private accessToken: string | null = null;
@@ -191,10 +191,13 @@ class ApiService {
   }
 
   // Task methods
-  async getTasks(userId: string, completed?: boolean, limit: number = 50, offset: number = 0): Promise<TaskListResponse> {
+  async getTasks(userId: string, completed?: boolean, search?: string, limit: number = 50, offset: number = 0): Promise<TaskListResponse> {
     let url = `/api/${userId}/?limit=${limit}&offset=${offset}`;
     if (completed !== undefined) {
       url += `&completed=${completed}`;
+    }
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
     }
     return this.request<TaskListResponse>(url, { method: 'GET' });
   }
@@ -218,7 +221,64 @@ class ApiService {
   }
 
   async deleteTask(userId: string, taskId: string): Promise<void> {
-    await this.request<void>(`/api/${userId}/${taskId}`, { method: 'DELETE' });
+    const url = `${API_BASE_URL}/api/${userId}/${taskId}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add authorization header if we have an access token
+    const accessToken = this.getAccessToken();
+    if (accessToken) {
+      (headers as any)['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.status === 401) {
+        // Try to refresh the token
+        const refreshed = await this.refreshTokenIfNeeded();
+        if (refreshed) {
+          // Retry the request with the new token
+          const newAccessToken = this.getAccessToken();
+          if (newAccessToken) {
+            (headers as any)['Authorization'] = `Bearer ${newAccessToken}`;
+          }
+          const retryResponse = await fetch(url, {
+            method: 'DELETE',
+            headers
+          });
+          if (!retryResponse.ok && retryResponse.status !== 204) {
+            throw new Error(`API request failed: ${retryResponse.statusText}`);
+          }
+          // 204 No Content means success for DELETE
+          return;
+        } else {
+          // Token refresh failed, clear tokens and redirect to login
+          this.clearTokens();
+          window.location.href = '/auth/sign-in';
+          throw new Error('Authentication required');
+        }
+      }
+
+      if (!response.ok && response.status !== 204) {
+        throw new Error(`API request failed: ${response.statusText}`);
+      }
+
+      // 204 No Content means success for DELETE
+      return;
+    } catch (error) {
+      console.error('API request error:', error);
+      // Check if it's a network error (Failed to fetch)
+      if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+        throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
+      }
+      throw error;
+    }
   }
 
   async toggleTaskCompletion(userId: string, taskId: string, completionData: TaskToggleComplete): Promise<Task> {
@@ -251,10 +311,13 @@ class ApiService {
   }
 
   // Project methods
-  async getProjects(userId: string, completed?: boolean, limit: number = 50, offset: number = 0): Promise<Project[]> {
+  async getProjects(userId: string, completed?: boolean, search?: string, limit: number = 50, offset: number = 0): Promise<Project[]> {
     let url = `/api/${userId}/projects?limit=${limit}&offset=${offset}`;
     if (completed !== undefined) {
       url += `&completed=${completed}`;
+    }
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
     }
     return this.request<Project[]>(url, { method: 'GET' });
   }
@@ -294,9 +357,17 @@ class ApiService {
   }
 
   async updateUserProfile(userId: string, userData: Partial<User>): Promise<User> {
+    // Only send the fields that are defined in the UserUpdate schema
+    const updateData: Partial<User> = {};
+    if (userData.email !== undefined) updateData.email = userData.email;
+    if (userData.name !== undefined) updateData.name = userData.name;
+    if (userData.bio !== undefined) updateData.bio = userData.bio;
+    if (userData.location !== undefined) updateData.location = userData.location;
+    if (userData.theme_preference !== undefined) updateData.theme_preference = userData.theme_preference;
+
     return this.request<User>(`/api/${userId}/profile`, {
       method: 'PUT',
-      body: JSON.stringify(userData),
+      body: JSON.stringify(updateData),
     });
   }
 

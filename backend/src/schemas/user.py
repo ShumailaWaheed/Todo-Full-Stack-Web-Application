@@ -22,3 +22,22 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     """Schema for updating an existing user."""
     email: Optional[str] = None
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    theme_preference: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    """Schema for returning user profile data."""
+    id: str
+    email: str
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    theme_preference: Optional[str] = 'dark'
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

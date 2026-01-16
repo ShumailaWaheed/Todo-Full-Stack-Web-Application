@@ -104,6 +104,8 @@ ALEMBIC_DATABASE_URL=postgresql://username:password@localhost:5432/todo_db
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
+**Note**: The backend server runs on port 8000 by default. Adjust the NEXT_PUBLIC_API_URL if you run the backend on a different port.
+
 ## API Documentation
 
 The API documentation is automatically available at:

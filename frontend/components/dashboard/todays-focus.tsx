@@ -107,7 +107,7 @@ const TodaysFocus: React.FC<TodaysFocusProps> = ({ className = '' }) => {
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: priorityColor, boxShadow: `0 0 8px ${priorityColor}` }}></div>
                 </div>
                 <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-white/20">
-                  <span className="flex items-center gap-1.5">ID: {task.id.slice(0, 4)}</span>
+                  <span className="flex items-center gap-1.5">ID: {String(task.id).slice(0, 4)}</span>
                   <span>/</span>
                   <span className={`${task.completed ? '' : 'group-hover:text-[#8b5cf6]'} transition-colors font-mono`}>SYNC_READY</span>
                 </div>

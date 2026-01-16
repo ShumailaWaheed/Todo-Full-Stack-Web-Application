@@ -5,8 +5,8 @@ import os
 from datetime import datetime, timedelta
 from sqlmodel import Session
 from jose import JWTError, jwt
-from database.session import get_session_dep
-from models.user import User
+from ..database.session import get_session_dep
+from ..models.user import User
 from sqlmodel import select
 
 # Security scheme for API docs

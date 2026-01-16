@@ -1,43 +1,92 @@
 // frontend/app/dashboard/projects/page.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaFolder, FaPlus, FaSearch, FaEllipsisV, FaStar, FaRegClock, FaCheckCircle } from 'react-icons/fa';
+import { useAuth } from '../../../lib/auth/context';
+import { apiService } from '../../../lib/api';
+import { Project } from '../../../lib/types/project';
 
 const ProjectsPage: React.FC = () => {
-  // Mock data for projects
-  const projects = [
-    {
-      id: 1,
-      name: 'Website Redesign',
-      description: 'Complete overhaul of company website',
-      status: 'active',
-      progress: 75,
-      tasks: { completed: 15, total: 20 },
-      members: 4,
-      dueDate: '2025-01-15',
-    },
-    {
-      id: 2,
-      name: 'Mobile App',
-      description: 'New mobile application for customers',
-      status: 'active',
-      progress: 45,
-      tasks: { completed: 9, total: 20 },
-      members: 6,
-      dueDate: '2025-02-28',
-    },
-    {
-      id: 3,
-      name: 'Marketing Campaign',
-      description: 'Q1 marketing initiative',
-      status: 'completed',
-      progress: 100,
-      tasks: { completed: 12, total: 12 },
-      members: 3,
-      dueDate: '2024-12-31',
-    },
-  ];
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const projectsData = await apiService.getProjects(user.id);
+        setProjects(projectsData);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [user]);
+
+  // Calculate stats based on real projects data
+  const totalProjects = projects.length;
+  const completedProjects = projects.filter(p => p.completed).length;
+  const activeProjects = projects.filter(p => !p.completed).length;
+  const totalMembers = projects.reduce((sum, p) => sum + (p.members || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="mb-8">
+          <div className="flex items-center">
+            <FaFolder className="text-purple-400 text-2xl mr-3" />
+            <h1 className="text-2xl font-bold text-white">Projects</h1>
+          </div>
+          <p className="text-gray-400 mt-2">Loading projects...</p>
+        </div>
+
+        {/* Loading skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl animate-pulse">
+              <div className="flex items-center">
+                <div className="p-3 rounded-xl bg-gray-700/50 mr-4">
+                  <div className="w-6 h-6 bg-gray-600 rounded"></div>
+                </div>
+                <div>
+                  <div className="h-4 bg-gray-700 rounded w-20 mb-2"></div>
+                  <div className="h-6 bg-gray-600 rounded w-12"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/30 shadow-lg">
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-gray-700/40 rounded-xl p-6 border border-gray-600/40 animate-pulse">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-start space-x-4">
+                    <div className="p-3 rounded-xl bg-gray-700/50">
+                      <div className="w-6 h-6 bg-gray-600 rounded"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-5 bg-gray-600 rounded w-32 mb-2"></div>
+                      <div className="h-4 bg-gray-600 rounded w-48 mb-4"></div>
+                      <div className="h-4 bg-gray-600 rounded w-40"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -75,7 +124,7 @@ const ProjectsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-gray-400 text-sm">Total Projects</p>
-              <p className="text-2xl font-bold text-white">{projects.length}</p>
+              <p className="text-2xl font-bold text-white">{totalProjects}</p>
             </div>
           </div>
         </div>
@@ -87,7 +136,7 @@ const ProjectsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-gray-400 text-sm">Completed</p>
-              <p className="text-2xl font-bold text-white">{projects.filter(p => p.status === 'completed').length}</p>
+              <p className="text-2xl font-bold text-white">{completedProjects}</p>
             </div>
           </div>
         </div>
@@ -99,7 +148,7 @@ const ProjectsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-gray-400 text-sm">In Progress</p>
-              <p className="text-2xl font-bold text-white">{projects.filter(p => p.status === 'active').length}</p>
+              <p className="text-2xl font-bold text-white">{activeProjects}</p>
             </div>
           </div>
         </div>
@@ -111,7 +160,7 @@ const ProjectsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-gray-400 text-sm">Team Members</p>
-              <p className="text-2xl font-bold text-white">{projects.reduce((sum, p) => sum + p.members, 0)}</p>
+              <p className="text-2xl font-bold text-white">{totalMembers}</p>
             </div>
           </div>
         </div>
@@ -132,69 +181,88 @@ const ProjectsPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              className="bg-gray-700/40 hover:bg-gray-700/50 rounded-xl p-6 border border-gray-600/40 transition-all duration-200"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20">
-                    <FaFolder className="text-purple-400 text-xl" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-bold text-white">{project.name}</h3>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        project.status === 'active'
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      }`}>
-                        {project.status === 'active' ? 'Active' : 'Completed'}
-                      </span>
-                    </div>
-                    <p className="text-gray-400 mt-1">{project.description}</p>
+          {projects.length > 0 ? (
+            projects.map((project) => {
+              // Calculate progress based on tasks in the project if available
+              const progress = project.progress || 0;
 
-                    <div className="flex items-center mt-4 space-x-6">
-                      <div className="flex items-center text-sm text-gray-400">
-                        <FaCheckCircle className="mr-1.5 text-green-400" />
-                        {project.tasks.completed}/{project.tasks.total} tasks
+              return (
+                <div
+                  key={project.id}
+                  className="bg-gray-700/40 hover:bg-gray-700/50 rounded-xl p-6 border border-gray-600/40 transition-all duration-200"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-start space-x-4">
+                      <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20">
+                        <FaFolder className="text-purple-400 text-xl" />
                       </div>
-                      <div className="flex items-center text-sm text-gray-400">
-                        <FaRegClock className="mr-1.5 text-orange-400" />
-                        Due {project.dueDate}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-400">
-                        <FaStar className="mr-1.5 text-purple-400" />
-                        {project.members} members
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-lg font-bold text-white">{project.name}</h3>
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            !project.completed
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          }`}>
+                            {!project.completed ? 'Active' : 'Completed'}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 mt-1">{project.description}</p>
+
+                        <div className="flex items-center mt-4 space-x-6">
+                          <div className="flex items-center text-sm text-gray-400">
+                            <FaCheckCircle className="mr-1.5 text-green-400" />
+                            {project.tasks_completed || 0}/{project.tasks_total || 0} tasks
+                          </div>
+                          <div className="flex items-center text-sm text-gray-400">
+                            <FaRegClock className="mr-1.5 text-orange-400" />
+                            Due {project.due_date || 'N/A'}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-400">
+                            <FaStar className="mr-1.5 text-purple-400" />
+                            {project.members || 0} members
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <div className="flex justify-between text-sm text-gray-400 mb-1">
+                            <span>Progress</span>
+                            <span>{progress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-600/50 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                project.completed
+                                  ? 'bg-gradient-to-r from-green-500 to-teal-500'
+                                  : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                              }`}
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-4">
-                      <div className="flex justify-between text-sm text-gray-400 mb-1">
-                        <span>Progress</span>
-                        <span>{project.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-600/50 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            project.status === 'completed'
-                              ? 'bg-gradient-to-r from-green-500 to-teal-500'
-                              : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                          }`}
-                          style={{ width: `${project.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                    <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-600/50 rounded-lg transition-colors duration-200">
+                      <FaEllipsisV />
+                    </button>
                   </div>
                 </div>
-
-                <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-600/50 rounded-lg transition-colors duration-200">
-                  <FaEllipsisV />
-                </button>
+              );
+            })
+          ) : (
+            <div className="text-center py-12">
+              <div className="mx-auto w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+                <FaFolder className="text-gray-500 text-2xl" />
               </div>
+              <h3 className="text-lg font-medium text-white mb-2">No projects yet</h3>
+              <p className="text-gray-400 mb-4">Get started by creating a new project</p>
+              <button className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300">
+                <FaPlus className="mr-2" />
+                Create Project
+              </button>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

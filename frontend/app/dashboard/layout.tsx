@@ -35,6 +35,7 @@ interface DashboardLayoutProps {
 
 // Components
 import GlobalSearch from '../../components/dashboard/global-search';
+import { ChatBotButton } from '../../src/components/chatbot';
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, loading, logout } = useAuth();
@@ -217,11 +218,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Main Vector Surface */}
         <div className={`
-          min-h-screen transition-all duration-700 ease-[cubic-bezier(0.2,1,0.3,1)]
+          min-h-screen flex flex-col transition-all duration-700 ease-[cubic-bezier(0.2,1,0.3,1)]
           ${isMobile ? '' : 'ml-16'}
         `}>
           {/* Superior Header */}
-          <header className="h-20 flex items-center justify-between px-8 relative z-40 border-b border-white/5 bg-black/10 backdrop-blur-md">
+          <header className="h-20 flex items-center justify-between px-8 sticky top-0 z-40 border-b border-white/5 bg-black/10 backdrop-blur-md">
              <div className="flex items-center gap-6">
                 {isMobile && (
                   <button onClick={() => setMobileMenuOpen(true)} className="text-white/60"><FaBars /></button>
@@ -234,7 +235,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
              <div className="flex items-center gap-6">
                 {/* Internal Search Engine */}
-                <div className="hidden lg:block">
+                <div className="hidden sm:block">
                    <GlobalSearch />
                 </div>
 
@@ -287,8 +288,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </header>
 
           {/* Content Container */}
-          <main className="p-6 md:p-10 lg:p-12 relative z-10 overflow-visible h-full">
+          <main className="p-6 md:p-10 lg:p-12 relative z-10 pb-24 flex-grow overflow-y-auto">
             {children}
+            <ChatBotButton />
           </main>
         </div>
 

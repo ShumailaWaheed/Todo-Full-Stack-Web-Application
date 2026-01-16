@@ -2,16 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select, func
 from typing import List
 from datetime import datetime, timedelta
-from database.session import get_session_dep
-from models.task import Task as TaskModel
-from schemas.task import (
+from ..database.session import get_session_dep
+from ..models.task import Task as TaskModel
+from ..schemas.task import (
     TaskCreate, TaskUpdate, Task as TaskSchema, TaskToggleComplete, TaskListResponse,
     TaskCompletionTrendsResponse, TaskCompletionTrend,
     WeeklyTaskActivityResponse, WeeklyTaskActivity,
     TaskAnalyticsSummary
 )
-from middleware.auth import get_current_user, verify_user_owns_resource
-from models.user import User
+from ..middleware.auth import get_current_user, verify_user_owns_resource
+from ..models.user import User
 import os
 
 router = APIRouter()
@@ -22,6 +22,7 @@ def list_tasks(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep),
     completed: bool = Query(None, description="Filter by completion status"),
+    search: str = Query(None, description="Search term for title and description"),
     limit: int = Query(50, ge=1, le=100, description="Number of tasks to return"),
     offset: int = Query(0, ge=0, description="Offset for pagination")
 ):
@@ -40,10 +41,23 @@ def list_tasks(
     if completed is not None:
         query = query.where(TaskModel.completed == completed)
 
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            TaskModel.title.ilike(search_pattern) |
+            TaskModel.description.ilike(search_pattern)
+        )
+
     # Get total count
     count_query = select(func.count(TaskModel.id)).where(TaskModel.user_id == user_id)
     if completed is not None:
         count_query = count_query.where(TaskModel.completed == completed)
+    if search:
+        search_pattern = f"%{search}%"
+        count_query = count_query.where(
+            TaskModel.title.ilike(search_pattern) |
+            TaskModel.description.ilike(search_pattern)
+        )
     total_count = session.exec(count_query).one()
 
     # Apply pagination

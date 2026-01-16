@@ -7,7 +7,6 @@ from pydantic import ConfigDict
 
 if TYPE_CHECKING:
     from .user import User
-    from .task import Task
 
 
 class ProjectBase(SQLModel):
@@ -21,13 +20,12 @@ class ProjectBase(SQLModel):
 
 class Project(ProjectBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: str = Field(foreign_key="users.id")
+    user_id: str = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Relationship
     user: "User" = Relationship(back_populates="projects")
-    tasks: List["Task"] = Relationship(back_populates="project")
 
 
 class ProjectCreate(ProjectBase):

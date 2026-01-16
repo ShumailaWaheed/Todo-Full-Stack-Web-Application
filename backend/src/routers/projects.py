@@ -5,11 +5,11 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
-from database.session import get_session_dep
-from models.user import User
-from models.project import Project, ProjectCreate, ProjectUpdate, ProjectRead
-from schemas.project import ProjectResponse
-from middleware.auth import get_current_user
+from ..database.session import get_session_dep
+from ..models.user import User
+from ..models.project import Project, ProjectCreate, ProjectUpdate, ProjectRead
+from ..schemas.project import ProjectResponse
+from ..middleware.auth import get_current_user
 
 router = APIRouter()
 
@@ -18,6 +18,7 @@ router = APIRouter()
 async def get_projects(
     user_id: str,  # Changed from UUID to str to match user_id format
     completed: Optional[bool] = Query(None),
+    search: Optional[str] = Query(None, description="Search term for project name and description"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
@@ -35,6 +36,13 @@ async def get_projects(
 
     if completed is not None:
         query = query.where(Project.completed == completed)
+
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            Project.name.ilike(search_pattern) |
+            Project.description.ilike(search_pattern)
+        )
 
     query = query.offset(offset).limit(limit)
     projects = session.exec(query).all()

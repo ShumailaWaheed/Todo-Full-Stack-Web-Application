@@ -1,7 +1,7 @@
 // frontend/app/dashboard/page.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { apiService } from '../../lib/api';
 import { Task } from '../../lib/types/task';
@@ -30,7 +30,7 @@ const DashboardPage: React.FC = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [greeting, setGreeting] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     try {
       setLoadingData(true);
@@ -46,7 +46,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [user, addToast]);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -55,7 +55,7 @@ const DashboardPage: React.FC = () => {
     else setGreeting('Review');
 
     if (user && !loading) fetchData();
-  }, [user, loading]);
+  }, [user, loading, fetchData]);
 
   // REAL LOGIC CALCULATIONS
   const activeTasks = useMemo(() => tasks.filter(t => !t.completed), [tasks]);
@@ -67,12 +67,12 @@ const DashboardPage: React.FC = () => {
     return Math.round((completedTasks.length / tasks.length) * 100);
   }, [tasks, completedTasks]);
 
-  const stats = [
+  const stats = useMemo(() => [
     { label: 'ACTIVE', value: activeTasks.length, icon: FaClock, color: '#3b82f6' },
     { label: 'COMPLETED', value: completedTasks.length, icon: FaCheck, color: '#10b981' },
     { label: 'PENDING', value: activeTasks.length, icon: FaFolder, color: '#8b5cf6' },
     { label: 'PRODUCTIVITY', value: productivityScore, icon: FaFire, color: HighScoreColor(productivityScore) },
-  ];
+  ], [activeTasks.length, completedTasks.length, productivityScore]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
@@ -118,7 +118,7 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Stats row with "Data-Pop" animation */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <div
             key={stat.label}

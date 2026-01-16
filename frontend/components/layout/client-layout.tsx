@@ -8,6 +8,7 @@ import { FaInfinity } from 'react-icons/fa6';
 import Header from '../ui/header';
 import Footer from '../ui/footer';
 import Sidebar from './sidebar';
+import { ChatBotButton } from '../../src/components/chatbot';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -55,8 +56,10 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
     <>
       {showSidebar && !isDashboardPage && <Sidebar />}
       {!isAuthPage && <Header />}
-      <main className={!isAuthPage ? "min-h-screen" : ""}>
+      <main className={!isAuthPage ? "min-h-screen pb-24" : ""}>
         {children}
+        {/* Only show chatbot on dashboard pages, not on home or auth pages */}
+        {!isAuthPage && !isHomePage && <ChatBotButton />}
       </main>
       {!isAuthPage && <Footer />}
     </>

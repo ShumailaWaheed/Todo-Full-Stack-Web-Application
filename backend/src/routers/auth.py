@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
-from database.session import get_session_dep
-from middleware.auth import create_access_token
-from schemas.auth import LoginRequest, Token
-from models.user import User
+from ..database.session import get_session_dep
+from ..middleware.auth import create_access_token
+from ..schemas.auth import LoginRequest, Token
+from ..models.user import User
 from datetime import timedelta
 import os
 import uuid

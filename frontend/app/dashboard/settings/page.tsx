@@ -139,10 +139,19 @@ const SettingsPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
+
+      // Try to get a more specific error message
+      let errorMessage = 'Could not save your settings. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
       addToast({
         type: 'error',
         title: 'Update Failed',
-        message: 'Could not save your settings. Please try again.'
+        message: errorMessage
       });
     }
   };

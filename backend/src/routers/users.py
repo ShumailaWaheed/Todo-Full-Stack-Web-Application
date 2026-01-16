@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import Optional
-from database.session import get_session_dep
-from models.user import User
-from schemas.user import UserUpdate, UserResponse
-from middleware.auth import get_current_user
+from ..database.session import get_session_dep
+from ..models.user import User
+from ..schemas.user import UserUpdate, UserResponse
+from ..middleware.auth import get_current_user
 import uuid
 from datetime import datetime
 
@@ -12,10 +12,19 @@ router = APIRouter()
 
 @router.get("/profile", response_model=UserResponse)
 def get_profile(
+    user_id: str,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
     """Get current user's profile information."""
+    # Verify that the user_id in the URL matches the authenticated user
+    if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
@@ -29,11 +38,20 @@ def get_profile(
 
 @router.put("/profile", response_model=UserResponse)
 def update_profile(
+    user_id: str,
     user_update: UserUpdate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
     """Update current user's profile information."""
+    # Verify that the user_id in the URL matches the authenticated user
+    if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
     # Update user fields if provided
     if user_update.name is not None:
         current_user.name = user_update.name
@@ -64,10 +82,19 @@ def update_profile(
 
 @router.get("/export-data")
 def export_user_data(
+    user_id: str,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session_dep)
 ):
     """Export all user data in JSON format."""
+    # Verify that the user_id in the URL matches the authenticated user
+    if current_user.id != user_id:
+        # Return 404 as per constitution requirement to prevent user enumeration
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
     from models.task import Task
     from sqlmodel import select
     import json
