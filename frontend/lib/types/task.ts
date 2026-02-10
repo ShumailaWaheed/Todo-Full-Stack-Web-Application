@@ -7,6 +7,7 @@ export interface Task {
   user_id: string;
   due_date?: string; // ISO date string
   priority?: 'low' | 'medium' | 'high';
+  project_id?: number | null;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
 }
@@ -17,6 +18,7 @@ export interface TaskCreate {
   completed?: boolean;
   due_date?: string;
   priority?: 'low' | 'medium' | 'high';
+  project_id?: number | null;
 }
 
 export interface TaskUpdate {
@@ -25,6 +27,7 @@ export interface TaskUpdate {
   completed?: boolean;
   due_date?: string;
   priority?: 'low' | 'medium' | 'high';
+  project_id?: number | null;
 }
 
 export interface TaskToggleComplete {

@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../lib/auth/context';
 import { apiService } from '../../../lib/api';
 import { Task } from '../../../lib/types/task';
+import { Project } from '../../../lib/types/project';
 import { useToast } from '../../../components/ui/toast';
 import {
   FaTerminal,
@@ -35,6 +36,8 @@ const TasksPage: React.FC = () => {
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectFilter, setProjectFilter] = useState<string>('all');
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -56,6 +59,24 @@ const TasksPage: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
+    if (user) {
+      apiService.getProjects(user.id).then(setProjects).catch(() => {});
+    }
+  }, [user]);
+
+  // Listen for chatbot task events to refresh the list
+  useEffect(() => {
+    const refresh = () => fetchTasks();
+    window.addEventListener('taskCreated', refresh);
+    window.addEventListener('taskUpdated', refresh);
+    window.addEventListener('taskToggled', refresh);
+    window.addEventListener('taskDeleted', refresh);
+    return () => {
+      window.removeEventListener('taskCreated', refresh);
+      window.removeEventListener('taskUpdated', refresh);
+      window.removeEventListener('taskToggled', refresh);
+      window.removeEventListener('taskDeleted', refresh);
+    };
   }, [user]);
 
   const toggleTask = async (taskId: string, currentStatus: boolean) => {
@@ -167,12 +188,15 @@ const TasksPage: React.FC = () => {
     return tasks.filter(t => {
       const matchFilter = filter === 'all' ? true : filter === 'completed' ? t.completed : !t.completed;
       const matchSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchFilter && matchSearch;
+      const matchProject = projectFilter === 'all' ? true :
+        projectFilter === 'none' ? !t.project_id :
+        String(t.project_id) === projectFilter;
+      return matchFilter && matchSearch && matchProject;
     });
-  }, [tasks, filter, searchQuery]);
+  }, [tasks, filter, searchQuery, projectFilter]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 p-4 lg:p-8 animate-in fade-in duration-1000">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10 p-1 sm:p-4 lg:p-8 animate-in fade-in duration-1000">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -180,7 +204,7 @@ const TasksPage: React.FC = () => {
               <FaTerminal className="text-[#8b5cf6] text-xs" />
               <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">TASK_MANAGEMENT</span>
            </div>
-           <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Tasks Overview</h1>
+           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tighter uppercase">Tasks Overview</h1>
            <p className="text-white/20 text-xs mt-1 font-bold uppercase tracking-widest">Active Items: {tasks.length} Tasks</p>
         </div>
 
@@ -205,7 +229,7 @@ const TasksPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
         {/* Left Column: Quick Capture */}
         <div className="lg:col-span-4 space-y-8">
            <div className="relative group">
@@ -215,7 +239,7 @@ const TasksPage: React.FC = () => {
 
            <div className="p-6 rounded-[2rem] border border-white/5 bg-black/20 backdrop-blur-md">
               <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-6">Data_Filter</h4>
-              <div className="relative group">
+              <div className="relative group mb-4">
                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 text-xs" />
                  <input
                   type="text"
@@ -225,6 +249,22 @@ const TasksPage: React.FC = () => {
                   className="w-full bg-white/[0.02] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-white placeholder:text-white/10 focus:border-[#8b5cf6]/40 focus:bg-white/[0.04] transition-all outline-none"
                  />
               </div>
+              {projects.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-3">Project_Filter</h4>
+                  <select
+                    value={projectFilter}
+                    onChange={(e) => setProjectFilter(e.target.value)}
+                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-black text-white focus:border-[#8b5cf6]/40 focus:bg-white/[0.04] transition-all outline-none appearance-none"
+                  >
+                    <option value="all" className="bg-[#0a0a0f]">All Projects</option>
+                    <option value="none" className="bg-[#0a0a0f]">No Project</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-[#0a0a0f]">{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
            </div>
         </div>
 
@@ -235,7 +275,7 @@ const TasksPage: React.FC = () => {
                 {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white/5 animate-pulse rounded-[1.5rem]" />)}
              </div>
            ) : filteredTasks.length > 0 ? (
-             <div className="overflow-hidden rounded-[2rem] border border-white/5">
+             <div className="overflow-hidden rounded-xl sm:rounded-[2rem] border border-white/5">
                {/* Table Header */}
                <div className="bg-[#0a0a0f] border-b border-white/5 px-6 py-4 hidden md:grid grid-cols-12 gap-4 text-[10px] font-black text-white/40 uppercase tracking-widest">
                  <div className="col-span-1">Status</div>
@@ -272,7 +312,7 @@ const TasksPage: React.FC = () => {
                    return (
                      <div
                        key={task.id}
-                       className={`group relative grid grid-cols-1 md:grid-cols-12 gap-4 p-6 transition-all duration-500 overflow-hidden ${
+                       className={`group relative grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 p-3 sm:p-6 transition-all duration-500 overflow-hidden ${
                          task.completed ? 'bg-black/40 opacity-40 grayscale' : 'bg-[#0a0a0f] hover:bg-[#11111b] hover:border-[#8b5cf6]/30 hover:-translate-y-1'
                        }`}
                      >

@@ -1,0 +1,1098 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../../lib/auth/context';
+import { FaRobot, FaTimes, FaPaperPlane, FaChevronDown, FaChevronUp, FaListUl, FaPlus } from 'react-icons/fa';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  action?: 'create_task' | 'view_tasks' | null;
+}
+
+interface ToolCall {
+  name: string;
+  args: Record<string, unknown>;
+  result?: unknown;
+}
+
+interface ChatResponse {
+  response: string;
+  tool_calls?: ToolCall[];
+  conversation_id?: number;
+}
+
+interface Task {
+  id: number | string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'completed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  due_date?: string;
+  created_at?: string;
+}
+
+// Task Management Service to connect to Phase II backend - using same API service as dashboard
+class TaskService {
+  private userId: number;
+  private baseUrl: string;
+
+  constructor(userId: number, apiUrl: string) {
+    this.userId = userId;
+    this.baseUrl = apiUrl;
+  }
+
+  // Helper method to get auth token from localStorage (same as apiService)
+  private getAuthToken(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    // Add authorization header if we have an access token (same as apiService)
+    const accessToken = this.getAuthToken();
+    if (accessToken) {
+      (headers as any)['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    const config: RequestInit = {
+      ...options,
+      headers,
+    };
+
+    const response = await fetch(url, config);
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    return response.json() as Promise<T>;
+  }
+
+  async getTasks(): Promise<Task[]> {
+    try {
+      return await this.request<Task[]>(`/api/${this.userId}/?limit=50&offset=0`, { method: 'GET' });
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      throw error;
+    }
+  }
+
+  async createTask(title: string, description?: string, priority: string = 'medium', due_date?: string): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/${this.userId}/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title,
+          description: description || '',
+          priority,
+          due_date: due_date || null,
+        }),
+      });
+    } catch (error) {
+      console.error('Error creating task:', error);
+      throw error;
+    }
+  }
+
+  async updateTask(taskId: number | string, updates: Partial<Task>): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/${this.userId}/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      throw error;
+    }
+  }
+
+  async toggleTaskCompletion(taskId: number | string): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/${this.userId}/${taskId}/complete`, {
+        method: 'PATCH',
+        body: JSON.stringify({ completed: true }),
+      });
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+      throw error;
+    }
+  }
+
+  async deleteTask(taskId: number | string): Promise<boolean> {
+    try {
+      await this.request<void>(`/api/${this.userId}/${taskId}`, { method: 'DELETE' });
+      return true;
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      throw error;
+    }
+  }
+}
+
+// Task Manager Component
+const TaskManager = ({ userId }: { userId: number }) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [addingTask, setAddingTask] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState<string>("");
+  const [newTaskDescription, setNewTaskDescription] = useState<string>("");
+  const [newTaskPriority, setNewTaskPriority] = useState<string>("medium");
+  const [newTaskDueDate, setNewTaskDueDate] = useState<string>("");
+  const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
+
+  const taskService = new TaskService(userId, taskApiUrl);
+
+  useEffect(() => {
+    loadTasks();
+  }, [userId]);
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const tasksData = await taskService.getTasks();
+      setTasks(tasksData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load tasks";
+      console.error("Load tasks error:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newTaskTitle.trim()) return;
+
+    try {
+      setAddingTask(true);
+      setError(null);
+
+      const newTask = await taskService.createTask(
+        newTaskTitle,
+        newTaskDescription,
+        newTaskPriority,
+        newTaskDueDate ? newTaskDueDate : undefined
+      );
+
+      // Refresh the task list to ensure synchronization
+      await loadTasks();
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setNewTaskPriority("medium");
+      setNewTaskDueDate("");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create task";
+      console.error("Create task error:", err);
+      setError(errorMessage);
+    } finally {
+      setAddingTask(false);
+    }
+  };
+
+  const handleToggleTask = async (taskId: string | number) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await taskService.toggleTaskCompletion(taskId);
+      // Refresh the task list to ensure synchronization
+      await loadTasks();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update task";
+      console.error("Toggle task error:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string | number) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      await taskService.deleteTask(taskId);
+      // Refresh the task list to ensure synchronization
+      await loadTasks();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete task";
+      console.error("Delete task error:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [editingTaskId, setEditingTaskId] = useState<string | number | null>(null);
+  const [editingTaskData, setEditingTaskData] = useState({
+    title: "",
+    description: "",
+    priority: "",
+    due_date: "",
+  });
+
+  const startEditingTask = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditingTaskData({
+      title: task.title,
+      description: task.description || "",
+      priority: task.priority || "medium",
+      due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : "",
+    });
+  };
+
+  const saveEditedTask = async (taskId: string | number) => {
+    if (!taskId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      await taskService.updateTask(taskId, {
+        ...editingTaskData,
+        due_date: editingTaskData.due_date ? editingTaskData.due_date : null,
+      });
+
+      // Refresh the task list to ensure synchronization
+      await loadTasks();
+      setEditingTaskId(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update task";
+      console.error("Update task error:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTasks = tasks.filter(task => {
+    if (filter === "pending") return task.status === "pending";
+    if (filter === "completed") return task.status === "completed";
+    return true;
+  });
+
+  return (
+    <div className="task-manager bg-[#1e293b]/80 backdrop-blur-lg rounded-2xl shadow-xl border border-[#334155]/50 p-6 mt-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#8b5cf6] to-[#ec4899] bg-clip-text text-transparent">
+          Direct Task Management
+        </h2>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-3 py-1 rounded-lg text-sm ${
+              filter === "all"
+                ? "bg-[#8b5cf6] text-white"
+                : "bg-[#334155] text-[#94a3b8]"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilter("pending")}
+            className={`px-3 py-1 rounded-lg text-sm ${
+              filter === "pending"
+                ? "bg-[#f59e0b] text-white"
+                : "bg-[#334155] text-[#94a3b8]"
+            }`}
+          >
+            Pending
+          </button>
+          <button
+            onClick={() => setFilter("completed")}
+            className={`px-3 py-1 rounded-lg text-sm ${
+              filter === "completed"
+                ? "bg-[#22c55e] text-white"
+                : "bg-[#334155] text-[#94a3b8]"
+            }`}
+          >
+            Completed
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-[#dc2626]/20 border border-[#7f1d1d]/50 rounded-lg">
+          <p className="text-[#fca5a5] text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Add Task Form */}
+      <form onSubmit={handleCreateTask} className="mb-6 p-4 bg-[#1e293b] rounded-xl border border-[#334155]/50">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+          <div>
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="Task title..."
+              className="w-full px-4 py-2 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc] placeholder-[#64748b]"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={newTaskPriority}
+              onChange={(e) => setNewTaskPriority(e.target.value)}
+              className="col-span-1 px-3 py-2 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc]"
+            >
+              <option value="low">Low Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
+              <option value="urgent">Urgent</option>
+            </select>
+            <input
+              type="date"
+              value={newTaskDueDate}
+              onChange={(e) => setNewTaskDueDate(e.target.value)}
+              className="col-span-1 px-3 py-2 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc]"
+            />
+          </div>
+        </div>
+        <div className="mb-3">
+          <textarea
+            value={newTaskDescription}
+            onChange={(e) => setNewTaskDescription(e.target.value)}
+            placeholder="Task description (optional)..."
+            className="w-full px-4 py-2 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc] placeholder-[#64748b] resize-none"
+            rows={2}
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={addingTask || !newTaskTitle.trim()}
+          className="px-4 py-2 bg-gradient-to-r from-[#8b5cf6] to-[#ec4899] text-white rounded-lg hover:from-[#7c3aed] hover:to-[#db2777] focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        >
+          {addingTask ? "Adding..." : "Add Task"}
+        </button>
+      </form>
+
+      {/* Tasks List */}
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {loading && tasks.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#8b5cf6]"></div>
+            <p className="mt-2 text-[#94a3b8]">Loading tasks...</p>
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="text-center py-8 text-[#94a3b8]">
+            <p>No tasks found. Add a task above!</p>
+          </div>
+        ) : (
+          filteredTasks.map((task) => (
+            <div
+              key={task.id}
+              className={`p-4 rounded-xl border ${
+                task.status === "completed"
+                  ? "bg-[#22c55e]/10 border-[#22c55e]/30"
+                  : "bg-[#1e293b] border-[#334155]/50"
+              }`}
+            >
+              {editingTaskId === task.id ? (
+                // Edit mode
+                <div>
+                  <input
+                    type="text"
+                    value={editingTaskData.title}
+                    onChange={(e) => setEditingTaskData({...editingTaskData, title: e.target.value})}
+                    className="w-full mb-2 px-3 py-1 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc]"
+                  />
+                  <textarea
+                    value={editingTaskData.description}
+                    onChange={(e) => setEditingTaskData({...editingTaskData, description: e.target.value})}
+                    className="w-full mb-2 px-3 py-1 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc] resize-none"
+                    rows={2}
+                  />
+                  <div className="flex items-center gap-2 mb-3">
+                    <select
+                      value={editingTaskData.priority}
+                      onChange={(e) => setEditingTaskData({...editingTaskData, priority: e.target.value})}
+                      className="px-2 py-1 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc] text-xs"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={editingTaskData.due_date}
+                      onChange={(e) => setEditingTaskData({...editingTaskData, due_date: e.target.value})}
+                      className="px-2 py-1 border border-[#334155] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent bg-[#1e293b] text-[#f8fafc] text-xs"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => saveEditedTask(task.id)}
+                      className="px-3 py-1 rounded text-xs bg-[#8b5cf6]/20 text-[#c4b5fd] hover:bg-[#8b5cf6]/30"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingTaskId(null)}
+                      className="px-3 py-1 rounded text-xs bg-[#64748b]/20 text-[#94a3b8] hover:bg-[#64748b]/30"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Display mode
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3
+                      className={`font-medium ${
+                        task.status === "completed"
+                          ? "text-[#86efac] line-through"
+                          : "text-[#e2e8f0]"
+                      }`}
+                    >
+                      {task.title}
+                    </h3>
+                    {task.description && (
+                      <p className="text-sm text-[#94a3b8] mt-1">{task.description}</p>
+                    )}
+                    <div className="flex items-center mt-2 space-x-3 text-xs text-[#94a3b8]">
+                      {task.priority && (
+                        <span className={`px-2 py-1 rounded ${
+                          task.priority === 'low' ? 'bg-blue-500/20 text-blue-300' :
+                          task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          task.priority === 'high' ? 'bg-orange-500/20 text-orange-300' :
+                          'bg-red-500/20 text-red-300'
+                        }`}>
+                          {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                        </span>
+                      )}
+                      {task.due_date && (
+                        <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => startEditingTask(task)}
+                      className="px-3 py-1 rounded text-xs bg-[#64748b]/20 text-[#94a3b8] hover:bg-[#64748b]/30"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleTask(task.id)}
+                      className={`px-3 py-1 rounded text-xs ${
+                        task.status === "completed"
+                          ? "bg-[#22c55e]/20 text-[#86efac] hover:bg-[#22c55e]/30"
+                          : "bg-[#f59e0b]/20 text-[#fde68a] hover:bg-[#f59e0b]/30"
+                      }`}
+                    >
+                      {task.status === "completed" ? "Reopen" : "Complete"}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="px-3 py-1 rounded text-xs bg-[#dc2626]/20 text-[#fca5a5] hover:bg-[#dc2626]/30"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default function ChatBot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showTaskManager, setShowTaskManager] = useState<boolean>(false);
+  const [conversationId, setConversationId] = useState<number | undefined>();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Get authenticated user
+  const { user } = useAuth();
+
+  // Get user ID from authenticated user (ensure it's a number for the API)
+  const userId = typeof user?.id === 'number' ? user.id : 1;
+
+  // Use Phase III backend (Hugging Face API) for chat functionality
+  const chatApiUrl = process.env.NEXT_PUBLIC_CHATBOT_API_URL || 'https://alishanaz029-todo-chatbot.hf.space';
+  // Use Phase II backend for task operations
+  const taskApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen && !isMinimized) {
+      scrollToBottom();
+      inputRef.current?.focus();
+    }
+  }, [messages, isOpen, isMinimized]);
+
+  const toggleChat = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      setIsMinimized(false);
+    }
+  };
+
+  const minimizeChat = () => {
+    setIsMinimized(true);
+  };
+
+  const expandChat = () => {
+    setIsMinimized(false);
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading || !userId) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input.trim(),
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      // Check if the message is related to tasks - if so, handle locally first
+      const lowerInput = input.toLowerCase().trim();
+      const taskService = new TaskService(typeof userId === 'number' ? userId : 1, taskApiUrl);
+
+      // Check if this is a task-related command
+      if (lowerInput.includes('list') && (lowerInput.includes('task') || lowerInput.includes('show'))) {
+        // Fetch and display tasks from dashboard
+        try {
+          const tasks = await taskService.getTasks();
+          let taskListResponse = "Here are your tasks:\n\n";
+
+          if (tasks.length === 0) {
+            taskListResponse = "You have no tasks at the moment.";
+          } else {
+            tasks.forEach((task, index) => {
+              taskListResponse += `${index + 1}. ${task.title}\n   Status: ${task.status}\n   Priority: ${task.priority}\n   ${task.due_date ? `Due: ${new Date(task.due_date).toLocaleDateString()}\n` : ''}\n`;
+            });
+          }
+
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: taskListResponse,
+            timestamp: new Date(),
+          };
+
+          setMessages((prev) => [...prev, assistantMessage]);
+          setIsLoading(false);
+          return; // Exit early since we handled it locally
+        } catch (taskError) {
+          console.error("Error fetching tasks:", taskError);
+          // Fall back to AI if there's an error
+        }
+      } else if (lowerInput.includes('add') || lowerInput.includes('create') || lowerInput.includes('new task')) {
+        // Handle task creation
+        try {
+          // Extract task title from the message (simple extraction)
+          let taskTitle = input.replace(/(add|create|make|new task to|task to)/gi, '').trim();
+          if (!taskTitle) {
+            taskTitle = "Untitled Task";
+          }
+
+          const newTask = await taskService.createTask(taskTitle);
+
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: `I've created the task "${newTask.title}" for you. It has been added to your dashboard.`,
+            timestamp: new Date(),
+          };
+
+          setMessages((prev) => [...prev, assistantMessage]);
+
+          // Dispatch a custom event to notify other parts of the app about the new task
+          window.dispatchEvent(new CustomEvent('taskCreated', { detail: newTask }));
+
+          setIsLoading(false);
+          return; // Exit early since we handled it locally
+        } catch (taskError) {
+          console.error("Error creating task:", taskError);
+          // Fall back to AI if there's an error
+        }
+      }
+
+      // For non-task related messages, use the Phase III backend (Hugging Face API)
+      const response = await fetch(`${chatApiUrl}/api/${userId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input.trim(),
+          conversation_id: conversationId || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text(); // Get the error response text
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data: ChatResponse = await response.json();
+
+      // Update conversation ID if not set
+      if (!conversationId && data.conversation_id) {
+        setConversationId(data.conversation_id);
+      }
+
+      // Handle the response according to the API documentation
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.response,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      let errorMessage = 'An error occurred while sending the message';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error("Chat error:", error);
+
+      // Add error message to chat
+      const errorMessageMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Error: ${errorMessage}`,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessageMsg]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const quickActions = [
+    { id: 'create_task', label: 'Add a Task', action: () => setInput('Add a new task for me') },
+    { id: 'view_tasks', label: 'View Tasks', action: () => setInput('Show me my tasks') },
+    { id: 'complete_task', label: 'Complete Task', action: () => setInput('Mark a task as complete') },
+  ];
+
+  if (!user) {
+    return null; // Don't show chatbot for unauthenticated users
+  }
+
+  return (
+    <>
+      {/* Floating Chat Button */}
+      {!isOpen && (
+        <button
+          onClick={toggleChat}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg hover:shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group"
+          aria-label="Open chat"
+        >
+          <div className="relative">
+            <FaRobot className="text-lg" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full flex items-center justify-center text-[6px] text-white border border-white/20 group-hover:animate-pulse">
+              <FaPlus className="text-[6px]" />
+            </div>
+          </div>
+        </button>
+      )}
+
+      {/* Chat Widget */}
+      {isOpen && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 w-80 flex flex-col border border-gray-700/50 rounded-2xl shadow-2xl bg-gradient-to-br from-gray-900 to-gray-950 text-white overflow-hidden transition-all duration-300 transform ${
+            isMinimized ? 'h-14 w-80' : 'h-[500px]'
+          }`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-800/80 to-gray-900/80 border-b border-gray-700/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
+                <FaRobot className="text-sm" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">AI Task Assistant</h3>
+                <p className="text-xs text-gray-400">
+                  {isMinimized ? 'Click to expand' : 'Online - Ready to help'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {isMinimized ? (
+                <button
+                  onClick={expandChat}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Expand chat"
+                >
+                  <FaChevronUp />
+                </button>
+              ) : (
+                <button
+                  onClick={minimizeChat}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Minimize chat"
+                >
+                  <FaChevronDown />
+                </button>
+              )}
+              <button
+                onClick={toggleChat}
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Close chat"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          {!isMinimized && (
+            <div className="flex border-b border-gray-700/50 bg-gray-800/30">
+              <button
+                onClick={() => setShowTaskManager(false)}
+                className={`px-4 py-3 text-sm font-medium transition-all duration-200 relative ${
+                  !showTaskManager
+                    ? "text-violet-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-violet-400 after:rounded-full"
+                    : "text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FaRobot className="text-xs" />
+                  Chat
+                </div>
+              </button>
+              <button
+                onClick={() => setShowTaskManager(true)}
+                className={`px-4 py-3 text-sm font-medium transition-all duration-200 relative ${
+                  showTaskManager
+                    ? "text-violet-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-violet-400 after:rounded-full"
+                    : "text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FaListUl className="text-xs" />
+                  Tasks
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Content Area */}
+          {!isMinimized && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {showTaskManager ? (
+                <div className="flex-1 overflow-y-auto p-4">
+                  <TaskManager userId={typeof user.id === 'number' ? user.id : 1} />
+                </div>
+              ) : (
+                <>
+                  {/* Messages Container */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/30">
+                    {messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                        <div className="mb-4 w-16 h-16 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
+                          <FaRobot className="text-2xl text-white" />
+                        </div>
+                        <h4 className="text-lg font-semibold mb-2 text-white">How can I help you today?</h4>
+                        <p className="text-gray-400 text-sm mb-4">Ask me to create, view, or manage your tasks</p>
+
+                        <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
+                          {quickActions.map((action) => (
+                            <button
+                              key={action.id}
+                              onClick={action.action}
+                              className="text-left p-3 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700/50 text-sm transition-colors text-white hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                              {action.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                                message.role === 'user'
+                                  ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white'
+                                  : 'bg-gray-800/80 border border-gray-700/50 text-white'
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                              <p className={`mt-1 text-xs ${
+                                message.role === 'user' ? 'text-white/70' : 'text-gray-400'
+                              }`}>
+                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {isTyping && (
+                          <div className="flex justify-start">
+                            <div className="bg-gray-800/80 border border-gray-700/50 rounded-2xl px-4 py-3 flex items-center gap-2">
+                              <span className="text-sm">Thinking</span>
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="p-4 border-t border-gray-700/50 bg-gray-900/30">
+                    <div className="flex gap-2">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Type your message..."
+                        className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm transition-all"
+                        disabled={isLoading}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={isLoading || !input.trim() || !userId}
+                        className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:from-violet-700 hover:to-fuchsia-700 shadow-lg hover:shadow-xl"
+                        aria-label="Send message"
+                      >
+                        {isLoading ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          <FaPaperPlane className="text-sm" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Press Enter to send
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+              <div>
+                <h3 className="font-semibold">AI Task Assistant</h3>
+                <p className="text-xs text-gray-400">
+                  {isMinimized ? 'Click to expand' : 'Online - Ready to help'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {isMinimized ? (
+                <button
+                  onClick={expandChat}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Expand chat"
+                >
+                  <FaChevronUp />
+                </button>
+              ) : (
+                <button
+                  onClick={minimizeChat}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Minimize chat"
+                >
+                  <FaChevronDown />
+                </button>
+              )}
+              <button
+                onClick={toggleChat}
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Close chat"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          {!isMinimized && (
+            <div className="flex border-b border-[#334155]/50 bg-gray-800/50">
+              <button
+                onClick={() => setShowTaskManager(false)}
+                className={`px-4 py-2 font-medium text-sm ${
+                  !showTaskManager
+                    ? "text-[#c4b5fd] border-b-2 border-[#8b5cf6]"
+                    : "text-[#94a3b8] hover:text-[#c4b5fd]"
+                }`}
+              >
+                AI Chat Assistant
+              </button>
+              <button
+                onClick={() => setShowTaskManager(true)}
+                className={`px-4 py-2 font-medium text-sm ${
+                  showTaskManager
+                    ? "text-[#c4b5fd] border-b-2 border-[#8b5cf6]"
+                    : "text-[#94a3b8] hover:text-[#c4b5fd]"
+                }`}
+              >
+                Direct Task Manager
+              </button>
+            </div>
+          )}
+
+          {/* Content Area */}
+          {!isMinimized && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {showTaskManager ? (
+                <div className="flex-1 overflow-y-auto p-4">
+                  <TaskManager userId={typeof user.id === 'number' ? user.id : 1} />
+                </div>
+              ) : (
+                <>
+                  {/* Messages Container */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/50">
+                    {messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                        <div className="mb-4 w-16 h-16 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                          <FaRobot className="text-2xl text-white" />
+                        </div>
+                        <h4 className="text-lg font-semibold mb-2">Welcome to AI Task Assistant</h4>
+                        <p className="text-gray-400 text-sm mb-4">Ask me to create, view, or manage your tasks</p>
+
+                        <div className="grid grid-cols-1 gap-2 w-full">
+                          {quickActions.map((action) => (
+                            <button
+                              key={action.id}
+                              onClick={action.action}
+                              className="text-left p-3 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 text-sm transition-colors"
+                            >
+                              {action.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                                message.role === 'user'
+                                  ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600'
+                                  : 'bg-gray-800 border border-gray-700'
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                              <p className={`mt-1 text-xs ${message.role === 'user' ? 'text-white/70' : 'text-gray-400'}`}>
+                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {isTyping && (
+                          <div className="flex justify-start">
+                            <div className="bg-gray-800 border border-gray-700 rounded-2xl px-4 py-3">
+                              <div className="flex items-center gap-1">
+                                <div className="typing-dot"></div>
+                                <div className="typing-dot"></div>
+                                <div className="typing-dot"></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="p-4 border-t border-gray-700 bg-gray-900/50">
+                    <div className="flex gap-2">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Type your message..."
+                        className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm"
+                        disabled={isLoading}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={isLoading || !input.trim() || !userId}
+                        className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:from-violet-700 hover:to-fuchsia-700"
+                        aria-label="Send message"
+                      >
+                        {isLoading ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          <FaPaperPlane className="text-sm" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Press Enter to send
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}

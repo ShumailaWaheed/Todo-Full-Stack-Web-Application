@@ -31,12 +31,14 @@ interface Message {
 
 interface ChatResponse {
   response: string;
+  success: boolean;
+  conversation_id?: string;
+  error?: string | null;
   tool_calls?: Array<{
     name: string;
     args: Record<string, unknown>;
     result?: unknown;
   }>;
-  conversation_id?: number;
 }
 
 // Animated background particles component
@@ -262,8 +264,8 @@ const ChatWidget = () => {
 
   // Dynamic sizing
   const chatSize = isExpanded
-    ? 'w-[500px] h-[700px]'
-    : 'w-[380px] h-[550px] sm:w-[400px] sm:h-[580px]';
+    ? 'w-[calc(100vw-2rem)] sm:w-[500px] h-[80vh] sm:h-[700px]'
+    : 'w-[calc(100vw-2rem)] sm:w-[400px] h-[70vh] sm:h-[580px]';
 
   return (
     <>

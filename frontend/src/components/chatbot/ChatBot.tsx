@@ -20,7 +20,7 @@ export default function ChatBot({ userId, token, isOpen, onClose }: ChatBotProps
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const PHASE_III_API = process.env.NEXT_PUBLIC_PHASE_III_API_URL || 'http://localhost:8000';
@@ -63,7 +63,7 @@ export default function ChatBot({ userId, token, isOpen, onClose }: ChatBotProps
       // Build request body - only include conversation_id if it has a value
       const requestBody: {
         message: string;
-        conversation_id?: number;
+        conversation_id?: string;
       } = {
         message: userMessage.content,
       };

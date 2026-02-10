@@ -681,3 +681,35 @@ body {
 .add-task-btn:hover .icon-container svg {
   color: var(--accent-primary);
 }
+
+/* Dark Theme Date Picker */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5) sepia(1) saturate(5) hue-rotate(230deg);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Dark Theme Select Dropdown */
+select option {
+  background: #0a0a0f;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+select option:hover {
+  background: rgba(139, 92, 246, 0.1);
+}

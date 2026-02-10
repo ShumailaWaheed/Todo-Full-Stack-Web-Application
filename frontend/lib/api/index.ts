@@ -103,7 +103,7 @@ class ApiService {
           }
           const retryResponse = await fetch(url, { ...config, headers });
           if (!retryResponse.ok) {
-            throw new Error(`API request failed: ${retryResponse.statusText}`);
+            throw new Error(`API request failed with status ${retryResponse.status}`);
           }
           return retryResponse.json() as Promise<T>;
         } else {
@@ -115,7 +115,7 @@ class ApiService {
       }
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
+        throw new Error(`API request failed with status ${response.status}`);
       }
 
       return response.json() as Promise<T>;
@@ -260,7 +260,7 @@ class ApiService {
             headers
           });
           if (!retryResponse.ok && retryResponse.status !== 204) {
-            throw new Error(`API request failed: ${retryResponse.statusText}`);
+            throw new Error(`API request failed with status ${retryResponse.status}`);
           }
           // 204 No Content means success for DELETE
           return;
@@ -273,7 +273,7 @@ class ApiService {
       }
 
       if (!response.ok && response.status !== 204) {
-        throw new Error(`API request failed: ${response.statusText}`);
+        throw new Error(`API request failed with status ${response.status}`);
       }
 
       // 204 No Content means success for DELETE
@@ -410,7 +410,7 @@ class ApiService {
             body: formData,
           });
           if (!retryResponse.ok) {
-            throw new Error(`API request failed: ${retryResponse.statusText}`);
+            throw new Error(`API request failed with status ${retryResponse.status}`);
           }
           return retryResponse.json();
         } else {
@@ -420,7 +420,7 @@ class ApiService {
           throw new Error('Authentication required');
         }
       }
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed with status ${response.status}`);
     }
 
     return response.json();

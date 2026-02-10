@@ -1,268 +1,218 @@
 # backend/tests/test_integration.py
 """
-Integration tests that verify all user stories work together.
-This test simulates a complete user journey through the application.
+Integration and security tests covering:
+- T108: Final integration testing of all user stories together
+- T109: Security review of authentication and user isolation
+- T110: Database query optimization verification
 """
 import pytest
-from fastapi.testclient import TestClient
-from src.main import app
 import uuid
-
-client = TestClient(app)
-
-
-def test_complete_user_journey():
-    """
-    Test the complete user journey:
-    1. User registration/login (User Story 1)
-    2. Task management - CRUD operations (User Story 2)
-    3. Task completion toggle (User Story 3)
-    """
-    # User Story 1: Authentication
-    # Register/login a new user
-    email = f"integration_test_{uuid.uuid4()}@example.com"
-    login_response = client.post(
-        "/api/auth/login",
-        json={"email": email, "password": "securepassword123"}
-    )
-    assert login_response.status_code == 200
-    tokens = login_response.json()
-    assert "access_token" in tokens
-    assert "refresh_token" in tokens
-    access_token = tokens["access_token"]
-
-    # Verify we can use the token for authenticated requests
-    auth_headers = {"Authorization": f"Bearer {access_token}"}
-
-    # User Story 2: Task Management (CRUD operations)
-    # Create a task
-    create_task_response = client.post(
-        "/api/users/temp_user_id/tasks",
-        json={
-            "title": "Integration Test Task",
-            "description": "This is a test task for integration testing",
-            "completed": False
-        },
-        headers=auth_headers
-    )
-    assert create_task_response.status_code == 201
-    created_task = create_task_response.json()
-    task_id = created_task["id"]
-    assert created_task["title"] == "Integration Test Task"
-    assert created_task["description"] == "This is a test task for integration testing"
-    assert created_task["completed"] is False
-
-    # Retrieve the task
-    get_task_response = client.get(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        headers=auth_headers
-    )
-    assert get_task_response.status_code == 200
-    retrieved_task = get_task_response.json()
-    assert retrieved_task["id"] == task_id
-    assert retrieved_task["title"] == "Integration Test Task"
-
-    # Update the task
-    update_task_response = client.put(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        json={
-            "title": "Updated Integration Test Task",
-            "description": "Updated description for integration test"
-        },
-        headers=auth_headers
-    )
-    assert update_task_response.status_code == 200
-    updated_task = update_task_response.json()
-    assert updated_task["title"] == "Updated Integration Test Task"
-    assert updated_task["description"] == "Updated description for integration test"
-
-    # List tasks and verify our task is there
-    list_tasks_response = client.get(
-        "/api/users/temp_user_id/tasks",
-        headers=auth_headers
-    )
-    assert list_tasks_response.status_code == 200
-    tasks_list = list_tasks_response.json()
-    assert len(tasks_list["tasks"]) >= 1
-    task_in_list = next((t for t in tasks_list["tasks"] if t["id"] == task_id), None)
-    assert task_in_list is not None
-    assert task_in_list["title"] == "Updated Integration Test Task"
-
-    # User Story 3: Task Completion Toggle
-    # Toggle task completion to true
-    toggle_response = client.patch(
-        f"/api/users/temp_user_id/tasks/{task_id}/complete",
-        json={"completed": True},
-        headers=auth_headers
-    )
-    assert toggle_response.status_code == 200
-    toggled_task = toggle_response.json()
-    assert toggled_task["completed"] is True
-
-    # Toggle task completion back to false
-    toggle_back_response = client.patch(
-        f"/api/users/temp_user_id/tasks/{task_id}/complete",
-        json={"completed": False},
-        headers=auth_headers
-    )
-    assert toggle_back_response.status_code == 200
-    toggled_back_task = toggle_back_response.json()
-    assert toggled_back_task["completed"] is False
-
-    # Verify the completion status persists in the database by retrieving the task
-    verify_completion_response = client.get(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        headers=auth_headers
-    )
-    assert verify_completion_response.status_code == 200
-    verified_task = verify_completion_response.json()
-    assert verified_task["completed"] is False
-
-    # Delete the task
-    delete_task_response = client.delete(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        headers=auth_headers
-    )
-    assert delete_task_response.status_code == 204
-
-    # Verify the task is deleted
-    verify_deletion_response = client.get(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        headers=auth_headers
-    )
-    assert verify_deletion_response.status_code == 404
+import time
 
 
-def test_user_isolation_integration():
-    """
-    Test that user isolation works properly across all features.
-    Users should not be able to access other users' data.
-    """
-    # Create first user
-    email1 = f"user1_{uuid.uuid4()}@example.com"
-    login_response1 = client.post(
-        "/api/auth/login",
-        json={"email": email1, "password": "password1"}
-    )
-    assert login_response1.status_code == 200
-    user1_tokens = login_response1.json()
-    user1_access_token = user1_tokens["access_token"]
+class TestFullIntegration:
+    """T108: End-to-end integration test across all user stories."""
 
-    # Create second user
-    email2 = f"user2_{uuid.uuid4()}@example.com"
-    login_response2 = client.post(
-        "/api/auth/login",
-        json={"email": email2, "password": "password2"}
-    )
-    assert login_response2.status_code == 200
-    user2_tokens = login_response2.json()
-    user2_access_token = user2_tokens["access_token"]
+    def test_complete_user_journey(self, client):
+        """Full user journey: register -> create tasks -> toggle -> analytics -> delete."""
+        # Step 1: Login/Register
+        email = f"journey_{uuid.uuid4().hex[:8]}@example.com"
+        login_resp = client.post("/auth/login", json={"email": email, "password": "pass123"})
+        assert login_resp.status_code == 200
+        tokens = login_resp.json()
+        headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # User 1 creates a task
-    create_task_response = client.post(
-        "/api/users/temp_user_id/tasks",
-        json={
-            "title": "User 1's Private Task",
-            "description": "This should only be accessible by user 1",
-            "completed": False
-        },
-        headers={"Authorization": f"Bearer {user1_access_token}"}
-    )
-    assert create_task_response.status_code == 201
-    private_task = create_task_response.json()
-    private_task_id = private_task["id"]
+        from src.middleware.auth import verify_token
+        payload = verify_token(tokens["access_token"])
+        user_id = payload.get("sub")
 
-    # User 2 tries to access User 1's task (should fail)
-    access_response = client.get(
-        f"/api/users/temp_user_id/tasks/{private_task_id}",
-        headers={"Authorization": f"Bearer {user2_access_token}"}
-    )
-    # Should return 404 due to user isolation
-    assert access_response.status_code == 404
+        # Step 2: Create tasks
+        task1_resp = client.post(
+            f"/api/{user_id}/tasks/",
+            json={"title": "Task 1", "priority": "high"},
+            headers=headers
+        )
+        assert task1_resp.status_code == 201
+        task1_id = task1_resp.json()["id"]
 
-    # User 2 tries to update User 1's task (should fail)
-    update_response = client.put(
-        f"/api/users/temp_user_id/tasks/{private_task_id}",
-        json={"title": "Attempted update by user 2"},
-        headers={"Authorization": f"Bearer {user2_access_token}"}
-    )
-    assert update_response.status_code == 404
+        task2_resp = client.post(
+            f"/api/{user_id}/tasks/",
+            json={"title": "Task 2", "priority": "low"},
+            headers=headers
+        )
+        assert task2_resp.status_code == 201
+        task2_id = task2_resp.json()["id"]
 
-    # User 2 tries to delete User 1's task (should fail)
-    delete_response = client.delete(
-        f"/api/users/temp_user_id/tasks/{private_task_id}",
-        headers={"Authorization": f"Bearer {user2_access_token}"}
-    )
-    assert delete_response.status_code == 404
+        # Step 3: List tasks
+        list_resp = client.get(f"/api/{user_id}/tasks/", headers=headers)
+        assert list_resp.status_code == 200
+        assert len(list_resp.json()["tasks"]) == 2
 
-    # User 2 tries to toggle completion of User 1's task (should fail)
-    toggle_response = client.patch(
-        f"/api/users/temp_user_id/tasks/{private_task_id}/complete",
-        json={"completed": True},
-        headers={"Authorization": f"Bearer {user2_access_token}"}
-    )
-    assert toggle_response.status_code == 404
+        # Step 4: Toggle completion
+        toggle_resp = client.patch(
+            f"/api/{user_id}/tasks/{task1_id}/complete",
+            json={"completed": True},
+            headers=headers
+        )
+        assert toggle_resp.status_code == 200
+        assert toggle_resp.json()["completed"] is True
 
-    # Clean up: User 1 deletes their task
-    cleanup_response = client.delete(
-        f"/api/users/temp_user_id/tasks/{private_task_id}",
-        headers={"Authorization": f"Bearer {user1_access_token}"}
-    )
-    assert cleanup_response.status_code == 204
+        # Step 5: Check analytics
+        analytics_resp = client.get(f"/api/{user_id}/tasks/analytics/summary", headers=headers)
+        assert analytics_resp.status_code == 200
+        data = analytics_resp.json()
+        assert data["total_tasks"] == 2
+        assert data["completed_tasks"] == 1
+        assert data["pending_tasks"] == 1
+
+        # Step 6: Update task
+        update_resp = client.put(
+            f"/api/{user_id}/tasks/{task2_id}",
+            json={"title": "Updated Task 2", "priority": "high"},
+            headers=headers
+        )
+        assert update_resp.status_code == 200
+        assert update_resp.json()["title"] == "Updated Task 2"
+
+        # Step 7: Delete task
+        delete_resp = client.delete(f"/api/{user_id}/tasks/{task1_id}", headers=headers)
+        assert delete_resp.status_code == 204
+
+        # Verify deletion
+        final_list = client.get(f"/api/{user_id}/tasks/", headers=headers)
+        assert len(final_list.json()["tasks"]) == 1
+
+    def test_project_task_integration(self, client):
+        """Full project-task integration flow."""
+        email = f"proj_{uuid.uuid4().hex[:8]}@example.com"
+        login_resp = client.post("/auth/login", json={"email": email, "password": "pass123"})
+        tokens = login_resp.json()
+        headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+        from src.middleware.auth import verify_token
+        payload = verify_token(tokens["access_token"])
+        user_id = payload.get("sub")
+
+        # Create project
+        project_resp = client.post(
+            f"/api/{user_id}/projects",
+            json={"name": "Integration Project", "slug": "int-proj"},
+            headers=headers
+        )
+        assert project_resp.status_code == 200
+        project_id = project_resp.json()["id"]
+
+        # Create task linked to project
+        task_resp = client.post(
+            f"/api/{user_id}/tasks/",
+            json={"title": "Linked Task", "project_id": project_id},
+            headers=headers
+        )
+        assert task_resp.status_code == 201
+        assert task_resp.json()["project_id"] == project_id
 
 
-def test_token_refresh_integration():
-    """
-    Test that token refresh works properly with all features.
-    """
-    # Login to get tokens
-    email = f"refresh_test_{uuid.uuid4()}@example.com"
-    login_response = client.post(
-        "/api/auth/login",
-        json={"email": email, "password": "password"}
-    )
-    assert login_response.status_code == 200
-    tokens = login_response.json()
-    initial_access_token = tokens["access_token"]
-    refresh_token = tokens["refresh_token"]
+class TestSecurityReview:
+    """T109: Security review of authentication and user isolation."""
 
-    # Use initial token to create a task
-    create_response = client.post(
-        "/api/users/temp_user_id/tasks",
-        json={
-            "title": "Task with initial token",
-            "description": "Created with initial access token",
-            "completed": False
-        },
-        headers={"Authorization": f"Bearer {initial_access_token}"}
-    )
-    assert create_response.status_code == 201
-    task = create_response.json()
-    task_id = task["id"]
+    def test_no_auth_header_rejected(self, client):
+        """Requests without Authorization header must be rejected."""
+        response = client.get("/api/any-user/tasks/")
+        assert response.status_code in [401, 403]
 
-    # Refresh the token
-    refresh_response = client.post(
-        "/api/auth/refresh",
-        json={"refresh_token": refresh_token}
-    )
-    assert refresh_response.status_code == 200
-    new_tokens = refresh_response.json()
-    new_access_token = new_tokens["access_token"]
-    new_refresh_token = new_tokens["refresh_token"]
+    def test_malformed_token_rejected(self, client):
+        """Malformed JWT tokens must be rejected."""
+        headers = {"Authorization": "Bearer not.a.valid.jwt.token"}
+        response = client.get("/api/any-user/tasks/", headers=headers)
+        assert response.status_code in [401, 403]
 
-    # Use new token to update the task
-    update_response = client.put(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        json={"title": "Task updated with new token"},
-        headers={"Authorization": f"Bearer {new_access_token}"}
-    )
-    assert update_response.status_code == 200
-    updated_task = update_response.json()
-    assert updated_task["title"] == "Task updated with new token"
+    def test_empty_bearer_rejected(self, client):
+        """Empty Bearer token must be rejected."""
+        headers = {"Authorization": "Bearer "}
+        response = client.get("/api/any-user/tasks/", headers=headers)
+        assert response.status_code in [401, 403]
 
-    # Clean up: delete the task
-    delete_response = client.delete(
-        f"/api/users/temp_user_id/tasks/{task_id}",
-        headers={"Authorization": f"Bearer {new_access_token}"}
-    )
-    assert delete_response.status_code == 204
+    def test_cross_user_task_access_blocked(self, client, two_users_with_headers):
+        """Cross-user task access must return 404 (not 403 to prevent enumeration)."""
+        (user1_id, headers1), (user2_id, headers2) = two_users_with_headers
+
+        # User 1 creates a task
+        resp = client.post(
+            f"/api/{user1_id}/tasks/",
+            json={"title": "Secret"},
+            headers=headers1
+        )
+        task_id = resp.json()["id"]
+
+        # User 2 tries every operation on user 1's task
+        assert client.get(f"/api/{user2_id}/tasks/{task_id}", headers=headers2).status_code == 404
+        assert client.put(f"/api/{user2_id}/tasks/{task_id}", json={"title": "X"}, headers=headers2).status_code == 404
+        assert client.delete(f"/api/{user2_id}/tasks/{task_id}", headers=headers2).status_code == 404
+        assert client.patch(f"/api/{user2_id}/tasks/{task_id}/complete", json={"completed": True}, headers=headers2).status_code == 404
+
+    def test_cross_user_project_access_blocked(self, client, two_users_with_headers):
+        """Cross-user project access must be blocked."""
+        (user1_id, headers1), (user2_id, headers2) = two_users_with_headers
+
+        resp = client.post(
+            f"/api/{user1_id}/projects",
+            json={"name": "Private", "slug": "private"},
+            headers=headers1
+        )
+        project_id = resp.json()["id"]
+
+        # User 2 tries to access user 1's project
+        get_resp = client.get(f"/api/{user2_id}/projects/{project_id}", headers=headers2)
+        assert get_resp.status_code == 404
+
+
+class TestDatabasePerformance:
+    """T110: Database query optimization verification."""
+
+    def test_task_listing_performance_with_multiple_tasks(self, client, user_with_headers):
+        """Task listing should be fast even with many tasks."""
+        user_id, headers = user_with_headers
+
+        # Create 20 tasks
+        for i in range(20):
+            client.post(
+                f"/api/{user_id}/tasks/",
+                json={"title": f"Performance Task {i}", "priority": ["low", "medium", "high"][i % 3]},
+                headers=headers
+            )
+
+        # Measure list query time
+        start = time.time()
+        response = client.get(f"/api/{user_id}/tasks/", headers=headers)
+        elapsed = time.time() - start
+
+        assert response.status_code == 200
+        assert len(response.json()["tasks"]) == 20
+        assert elapsed < 2.0, f"Task listing took {elapsed:.2f}s"
+
+    def test_analytics_performance_with_tasks(self, client, user_with_headers):
+        """Analytics queries should be fast with task data."""
+        user_id, headers = user_with_headers
+
+        # Create some tasks
+        for i in range(10):
+            resp = client.post(
+                f"/api/{user_id}/tasks/",
+                json={"title": f"Analytics Task {i}"},
+                headers=headers
+            )
+            if i % 2 == 0:
+                task_id = resp.json()["id"]
+                client.patch(
+                    f"/api/{user_id}/tasks/{task_id}/complete",
+                    json={"completed": True},
+                    headers=headers
+                )
+
+        # Measure analytics query time
+        start = time.time()
+        response = client.get(f"/api/{user_id}/tasks/analytics/summary", headers=headers)
+        elapsed = time.time() - start
+
+        assert response.status_code == 200
+        assert elapsed < 2.0, f"Analytics query took {elapsed:.2f}s"

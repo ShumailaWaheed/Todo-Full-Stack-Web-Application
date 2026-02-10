@@ -14,5 +14,6 @@ class Task(SQLModel, table=True):
     user_id: str = Field(default="", foreign_key="user.id")  # Foreign key to User
     due_date: Optional[datetime] = Field(default=None)
     priority: str = Field(default="medium", max_length=20)  # low, medium, high
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

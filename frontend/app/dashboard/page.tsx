@@ -57,6 +57,21 @@ const DashboardPage: React.FC = () => {
     if (user && !loading) fetchData();
   }, [user, loading, fetchData]);
 
+  // Listen for chatbot task events to refresh dashboard data
+  useEffect(() => {
+    const refresh = () => fetchData();
+    window.addEventListener('taskCreated', refresh);
+    window.addEventListener('taskUpdated', refresh);
+    window.addEventListener('taskToggled', refresh);
+    window.addEventListener('taskDeleted', refresh);
+    return () => {
+      window.removeEventListener('taskCreated', refresh);
+      window.removeEventListener('taskUpdated', refresh);
+      window.removeEventListener('taskToggled', refresh);
+      window.removeEventListener('taskDeleted', refresh);
+    };
+  }, [fetchData]);
+
   // REAL LOGIC CALCULATIONS
   const activeTasks = useMemo(() => tasks.filter(t => !t.completed), [tasks]);
   const completedTasks = useMemo(() => tasks.filter(t => t.completed), [tasks]);
@@ -99,7 +114,7 @@ const DashboardPage: React.FC = () => {
             <div className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse shadow-[0_0_10px_#8b5cf6]"></div>
             <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">TASK MANAGER READY</span>
           </div>
-          <h1 className="text-3xl lg:text-5xl font-black text-white tracking-tighter">
+          <h1 className="text-xl sm:text-3xl lg:text-5xl font-black text-white tracking-tighter">
             TIME TO <span className="text-[#8b5cf6]">{dynamicGreeting.toUpperCase()}</span>, {userName().toUpperCase()}
           </h1>
           <p className="text-sm text-white/30 mt-2 font-medium max-w-xl leading-relaxed">
@@ -122,7 +137,7 @@ const DashboardPage: React.FC = () => {
         {stats.map((stat, i) => (
           <div
             key={stat.label}
-            className="group relative border border-white/5 bg-black/20 p-6 rounded-[2rem] transition-all duration-500 hover:bg-[#8b5cf6]/5 hover:border-[#8b5cf6]/20 overflow-hidden"
+            className="group relative border border-white/5 bg-black/20 p-3 sm:p-6 rounded-xl sm:rounded-[2rem] transition-all duration-500 hover:bg-[#8b5cf6]/5 hover:border-[#8b5cf6]/20 overflow-hidden"
           >
             {/* Glossy Reflection FX */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
@@ -130,12 +145,12 @@ const DashboardPage: React.FC = () => {
             </div>
 
             <div className="flex items-start justify-between mb-4 relative z-10">
-              <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
                 <stat.icon className="text-sm" style={{ color: stat.color }} />
               </div>
               <div className="text-right">
                 <h4 className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">{stat.label}</h4>
-                <p className="text-3xl font-black text-white mt-1">
+                <p className="text-xl sm:text-3xl font-black text-white mt-1">
                   {loadingData ? '..' : stat.value}
                 </p>
               </div>
@@ -155,7 +170,7 @@ const DashboardPage: React.FC = () => {
            <AddTaskSection />
 
            {/* Real Performance Index */}
-           <div className="p-8 rounded-[2.5rem] border border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent relative overflow-hidden group">
+           <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent relative overflow-hidden group">
               {/* Holographic Border Beam */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
                  <div className="absolute inset-[-1px] rounded-[2.5rem] border border-[#8b5cf6]/40 shadow-[0_0_30px_rgba(139,92,246,0.2)]"></div>
@@ -172,7 +187,7 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-baseline gap-3 mb-6">
-                  <span className="text-7xl font-black text-white tracking-tighter italic">{productivityScore}</span>
+                  <span className="text-4xl sm:text-7xl font-black text-white tracking-tighter italic">{productivityScore}</span>
                   <span className="text-xl font-bold text-white/10 uppercase tracking-widest">Index</span>
                 </div>
 

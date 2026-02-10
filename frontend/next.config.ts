@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   env: {
-    NEXT_PUBLIC_API_URL: 'http://127.0.0.1:8001'
+    NEXT_PUBLIC_API_URL: 'https://shumaila02-todo-backend-v2.hf.space'
   },
 };
 

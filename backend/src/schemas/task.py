@@ -29,6 +29,7 @@ class TaskCreate(TaskBase):
     description: Optional[str] = None
     due_date: Optional[datetime] = None
     priority: Optional[str] = "medium"
+    project_id: Optional[int] = None
 
 class TaskUpdate(BaseModel):
     """Schema for updating an existing task."""
@@ -37,6 +38,7 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     due_date: Optional[datetime] = None
     priority: Optional[str] = None
+    project_id: Optional[int] = None
 
     @field_validator('due_date', mode='before')
     @classmethod
@@ -59,6 +61,7 @@ class Task(TaskBase):
     """Schema for returning task data with ID and timestamps."""
     id: int
     user_id: str
+    project_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 

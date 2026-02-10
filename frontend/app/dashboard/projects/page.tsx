@@ -191,10 +191,10 @@ const ProjectsPage: React.FC = () => {
                   key={project.id}
                   className="bg-gray-700/40 hover:bg-gray-700/50 rounded-xl p-6 border border-gray-600/40 transition-all duration-200"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start space-x-4">
-                      <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20">
-                        <FaFolder className="text-purple-400 text-xl" />
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                    <div className="flex items-start space-x-3 sm:space-x-4 min-w-0">
+                      <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 shrink-0">
+                        <FaFolder className="text-purple-400 text-lg sm:text-xl" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
@@ -209,16 +209,16 @@ const ProjectsPage: React.FC = () => {
                         </div>
                         <p className="text-gray-400 mt-1">{project.description}</p>
 
-                        <div className="flex items-center mt-4 space-x-6">
-                          <div className="flex items-center text-sm text-gray-400">
+                        <div className="flex flex-wrap items-center mt-3 sm:mt-4 gap-3 sm:gap-6">
+                          <div className="flex items-center text-xs sm:text-sm text-gray-400">
                             <FaCheckCircle className="mr-1.5 text-green-400" />
                             {project.tasks_completed || 0}/{project.tasks_total || 0} tasks
                           </div>
-                          <div className="flex items-center text-sm text-gray-400">
+                          <div className="flex items-center text-xs sm:text-sm text-gray-400">
                             <FaRegClock className="mr-1.5 text-orange-400" />
                             Due {project.due_date || 'N/A'}
                           </div>
-                          <div className="flex items-center text-sm text-gray-400">
+                          <div className="flex items-center text-xs sm:text-sm text-gray-400">
                             <FaStar className="mr-1.5 text-purple-400" />
                             {project.members || 0} members
                           </div>

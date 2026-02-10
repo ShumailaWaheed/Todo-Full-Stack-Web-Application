@@ -173,8 +173,8 @@ const SettingsPage: React.FC = () => {
             <div className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse shadow-[0_0_10px_#8b5cf6]"></div>
             <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Settings</span>
           </div>
-          <h1 className="text-3xl lg:text-5xl font-black text-white tracking-tighter">
-            Account <span className="text-[#8b5cf6]">Settings</span>, {user ? (user.name || user.email.split('@')[0]?.toUpperCase()) : 'Loading...'}
+          <h1 className="text-xl sm:text-3xl lg:text-5xl font-black text-white tracking-tighter">
+            Account <span className="text-[#8b5cf6]">Settings</span>
           </h1>
           <p className="text-sm text-white/30 mt-2 font-medium max-w-xl leading-relaxed">
             Customize your account preferences and personal information
@@ -184,8 +184,8 @@ const SettingsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Primary (Configuration Panel) */}
-        <div className="lg:col-span-3 space-y-8 sticky top-6">
-          <div className="bg-[#0a0a0f] border border-white/5 rounded-[2rem] p-6 overflow-hidden">
+        <div className="lg:col-span-3 space-y-8">
+          <div className="bg-[#0a0a0f] border border-white/5 rounded-xl sm:rounded-[2rem] p-3 sm:p-6 overflow-hidden">
             <div className="space-y-2">
               {[
                 { id: 'profile', label: 'Profile', icon: <FaUser /> },
@@ -221,7 +221,7 @@ const SettingsPage: React.FC = () => {
 
         {/* Right Secondary (Settings Content) */}
         <div className="lg:col-span-9">
-          <div className="bg-[#0a0a0f] border border-white/5 rounded-[2rem] p-8 overflow-hidden">
+          <div className="bg-[#0a0a0f] border border-white/5 rounded-xl sm:rounded-[2rem] p-4 sm:p-8 overflow-hidden">
             {activeTab === 'profile' && (
               <div>
                 <div className="flex items-center gap-3 mb-8">
@@ -568,7 +568,7 @@ const SettingsPage: React.FC = () => {
 
                   <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
                     <h3 className="text-lg font-bold text-white mb-4">Neural Accent</h3>
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                       {[
                         { name: 'Cosmic Purple', value: 'from-purple-500 to-pink-500', preview: 'bg-gradient-to-r from-[#8b5cf6] to-[#ec4899]' },
                         { name: 'Digital Blue', value: 'from-blue-500 to-teal-500', preview: 'bg-gradient-to-r from-blue-500 to-cyan-500' },

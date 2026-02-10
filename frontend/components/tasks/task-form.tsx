@@ -3,6 +3,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { TaskCreate, TaskUpdate } from '../../lib/types';
+import { Project } from '../../lib/types/project';
+import { useAuth } from '../../lib/auth/context';
+import { apiService } from '../../lib/api';
 import { useToast } from '../../components/ui/toast';
 import {
   FaCheck,
@@ -11,7 +14,8 @@ import {
   FaFlag,
   FaCalendar,
   FaAlignLeft,
-  FaBolt
+  FaBolt,
+  FaFolder
 } from 'react-icons/fa6';
 
 interface TaskFormProps {
@@ -30,10 +34,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
   loading = false
 }) => {
   const { addToast } = useToast();
+  const { user } = useAuth();
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [dueDate, setDueDate] = useState(initialData?.due_date || '');
   const [priority, setPriority] = useState(initialData?.priority || 'medium');
+  const [projectId, setProjectId] = useState<number | null>((initialData as any)?.project_id || null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [charCount, setCharCount] = useState(0);
@@ -42,6 +49,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
   useEffect(() => {
     setCharCount(title.length);
   }, [title]);
+
+  useEffect(() => {
+    if (user) {
+      apiService.getProjects(user.id).then(setProjects).catch(() => {});
+    }
+  }, [user]);
 
   const validateForm = () => {
     if (!title.trim()) {
@@ -82,7 +95,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
       title: title.trim(),
       description: description.trim() || undefined,
       due_date: dueDate,
-      priority
+      priority,
+      project_id: projectId
     };
 
     // Call onSubmit with a wrapper that handles success notifications
@@ -230,7 +244,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         </div>
       )}
 
-      {/* Step 2: Due Date */}
+      {/* Step 2: Due Date & Project */}
       {step === 2 && (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
           <div className="space-y-2">
@@ -238,29 +252,59 @@ const TaskForm: React.FC<TaskFormProps> = ({
               <FaCalendar className="text-[#8b5cf6] text-[10px]" />
               Due Date
             </label>
-            <input
-              type="date"
-              id="dueDate"
-              value={dueDate}
-              onChange={(e) => {
-                setDueDate(e.target.value);
-                // Clear error when user makes a change
-                if (error) {
-                  setError(null);
-                }
-              }}
-              onKeyDown={(e) => {
-                // Prevent form submission when Enter is pressed in the date field
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                }
-              }}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-bold text-white focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none"
-            />
+            <div className="relative">
+              <input
+                type="date"
+                id="dueDate"
+                value={dueDate}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  if (error) {
+                    setError(null);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 text-[11px] font-bold text-white focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none appearance-none"
+                style={{ colorScheme: 'dark' }}
+              />
+              <FaCalendar className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8b5cf6]/40 text-[10px] pointer-events-none" />
+            </div>
             <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest ml-1">
               Set deadline for task completion
             </p>
           </div>
+
+          {projects.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+                <FaFolder className="text-[#8b5cf6] text-[10px]" />
+                Project
+              </label>
+              <div className="relative">
+                <select
+                  value={projectId ?? ''}
+                  onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-4 pr-10 text-[11px] font-bold text-white focus:border-[#8b5cf6]/50 focus:bg-white/[0.06] transition-all outline-none appearance-none cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="" className="bg-[#0a0a0f] text-white/60">No Project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id} className="bg-[#0a0a0f] text-white">
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <FaFolder className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8b5cf6]/40 text-[10px] pointer-events-none" />
+              </div>
+              <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest ml-1">
+                Associate task with a project
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -312,6 +356,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   {priorityOptions.find(p => p.value === priority)?.label}
                 </span>
               </div>
+              {projectId && (
+                <div className="flex justify-between">
+                  <span className="text-white/40">Project:</span>
+                  <span className="text-white font-medium truncate max-w-[200px]">
+                    {projects.find(p => String(p.id) === String(projectId))?.name || 'Unknown'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

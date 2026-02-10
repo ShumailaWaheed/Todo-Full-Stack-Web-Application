@@ -42,12 +42,14 @@ const GlobalSearch: React.FC = () => {
 
       setLoading(true);
       try {
-        const [taskRes, projRes] = await Promise.all([
-          apiService.getTasks(user.id, undefined, query, 5, 0), // Pass search query to API
-          apiService.getProjects(user.id, undefined, query, 3, 0) // Pass search query to API
+        const [taskRes, projRes] = await Promise.allSettled([
+          apiService.getTasks(user.id, undefined, query, 5, 0),
+          apiService.getProjects(user.id, undefined, query, 3, 0)
         ]);
 
-        setResults({ tasks: taskRes.tasks || [], projects: Array.isArray(projRes) ? projRes : [] });
+        const tasks = taskRes.status === 'fulfilled' ? (taskRes.value.tasks || []) : [];
+        const projects = projRes.status === 'fulfilled' ? (Array.isArray(projRes.value) ? projRes.value : []) : [];
+        setResults({ tasks, projects });
       } catch (err) {
         console.error('Search Sync Error:', err);
       } finally {
