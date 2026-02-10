@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "rootDirectory": "frontend",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
+}
